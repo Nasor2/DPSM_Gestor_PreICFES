@@ -1,0 +1,377 @@
+<!--Template dinamico-->
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reporte de Resultados</title>
+    <link rel="stylesheet" href="qrc:/qt/qml/DPMS_Gestor_PreICFES/src/templates/stylesheet.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- PÁGINA 1 -->
+      <div class="page">
+        <!-- Header -->
+        <div class="header">
+          <div class="header-box">
+            <h1>Reporte de resultados</h1>
+          </div>
+          <img
+            src="qrc:/qt/qml/DPMS_Gestor_PreICFES/qml/icons/logo_completo.png"
+            alt="Logo Institucional"
+            class="logo-institucional"
+          />
+        </div>
+
+        <!-- 1. Datos del evaluado -->
+        <div class="section">
+          <div class="section-title">1. Datos del evaluado</div>
+          <div class="datos-evaluado">
+            <div class="dato-item">
+              <label>Nombre Completo:</label>
+              <span>{{studentName}}</span>
+            </div>
+            <div class="dato-item">
+              <label>Simulacro:</label>
+              <span>{{simulacroName}}</span>
+            </div>
+            <div class="dato-item">
+              <label>Aplicación del simulacro:</label>
+              <span>{{fechaAplicacion}}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Reporte General -->
+        <div class="section">
+          <div class="section-title">2. Reporte General</div>
+          <div class="reporte-general">
+            <div class="puntaje-box">
+              <img
+                src="qrc:/qt/qml/DPMS_Gestor_PreICFES/src/templates/assets/trophy-1.png"
+                alt="Puntaje Global"
+                class="trophy-icon"
+              />
+              <div class="puntaje-label">Puntaje global</div>
+              <div>
+                <span class="puntaje-numero">{{puntajeGlobal}}</span>
+                <span class="puntaje-total">/500</span>
+              </div>
+            </div>
+            <div class="percentil-info">
+              <div class="percentil-header">¿En qué percentiles estás?</div>
+              <div class="percentil-bar-container">
+                <div class="percentil-value">{{percentilGlobal}}</div>
+                <div class="percentil-subtitle">
+                  Estudiantes en este simulacro
+                </div>
+                <div class="percentil-bar">
+                  {{percentilBar}}
+                </div>
+                <div class="percentil-labels">
+                  <span>0</span>
+                  <span>20</span>
+                  <span>40</span>
+                  <span>60</span>
+                  <span>80</span>
+                  <span>100</span>
+                </div>
+                <div class="percentil-texto">
+                  Tu puntaje superó al {{percentilGlobal}} % de los estudiantes en este
+                  simulacro.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Resultados por prueba -->
+        <div class="section">
+          <div class="section-title">3. Resultados por prueba</div>
+
+          <!-- Lectura Crítica -->
+          <div class="materia-card">
+            <div>
+              <div class="materia-header">
+                <img
+                  src="qrc:/qt/qml/DPMS_Gestor_PreICFES/src/templates/assets/lectura.png"
+                  alt="Lectura Crítica"
+                  class="materia-icon"
+                />
+                <span class="materia-nombre">Lectura Crítica</span>
+              </div>
+              <div class="materia-puntaje">
+                <span class="materia-puntos">{{lecturaAciertos}}</span
+                ><span class="materia-denominador">/100</span>
+              </div>
+              <div class="materia-percentil">
+                <div class="percentil-label">¿En qué percentiles estás?</div>
+                <div class="percentil-subtitle">
+                  Estudiantes en este simulacro
+                </div>
+                <div class="mini-percentil">{{lecturaPercentil}}</div>
+                <div class="mini-bar">
+                  {{lecturaMiniBar}}
+                </div>
+
+                <div class="mini-percentil-labels">
+                  <span>0</span>
+                  <span>20</span>
+                  <span>40</span>
+                  <span>60</span>
+                  <span>80</span>
+                  <span>100</span>
+                </div>
+              </div>
+            </div>
+            <div class="materia-detalles">
+              <div class="nivel-desempeno">
+                <div class="nivel-titulo">Nivel de desempeño</div>
+                <div class="nivel-grafico">
+                  {{lecturaNivelGrafico}}
+                </div>
+                <div class="nivel-pregunta">
+                  ¿Qué habilidades reflejan este nivel?
+                </div>
+              </div>
+              <div class="habilidades-contenedor">
+                <ul class="habilidades-lista">
+                  {{lecturaHabilidades}}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Matemáticas -->
+          <div class="materia-card">
+            <div>
+              <div class="materia-header">
+                <img
+                  src="qrc:/qt/qml/DPMS_Gestor_PreICFES/src/templates/assets/mate.png"
+                  alt="Matemáticas"
+                  class="materia-icon"
+                />
+                <span class="materia-nombre">Matemáticas</span>
+              </div>
+              <div class="materia-puntaje">
+                <span class="materia-puntos">{{mateAciertos}}</span
+                ><span class="materia-denominador">/100</span>
+              </div>
+              <div class="materia-percentil">
+                <div class="percentil-label">¿En qué percentiles estás?</div>
+                <div class="percentil-subtitle">
+                  Estudiantes en este simulacro
+                </div>
+                <div class="mini-percentil">{{matePercentil}}</div>
+                <div class="mini-bar">
+                  {{mateMiniBar}}
+                </div>
+
+                <div class="mini-percentil-labels">
+                  <span>0</span>
+                  <span>20</span>
+                  <span>40</span>
+                  <span>60</span>
+                  <span>80</span>
+                  <span>100</span>
+                </div>
+              </div>
+            </div>
+            <div class="materia-detalles">
+              <div class="nivel-desempeno">
+                <div class="nivel-titulo">Nivel de desempeño</div>
+                <div class="nivel-grafico">
+                  {{mateNivelGrafico}}
+                </div>
+                <div class="nivel-pregunta">
+                  ¿Qué habilidades reflejan este nivel?
+                </div>
+              </div>
+              <div class="habilidades-contenedor">
+                <ul class="habilidades-lista">
+                  {{mateHabilidades}}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PÁGINA 2 -->
+      <div class="page">
+        <!-- Header (repetido para página 2) -->
+        <div class="header">
+          <div class="header-box">
+            <h1>Reporte de resultados</h1>
+          </div>
+          <img
+            src="qrc:/qt/qml/DPMS_Gestor_PreICFES/qml/icons/logo_completo.png"
+            alt="Logo Institucional"
+            class="logo-institucional"
+          />
+        </div>
+
+        <div class="section">
+          <!-- Sociales y Ciudadanas -->
+          <div class="materia-card">
+            <div>
+              <div class="materia-header">
+                <img
+                  src="qrc:/qt/qml/DPMS_Gestor_PreICFES/src/templates/assets/sociales.png"
+                  alt="Sociales y Ciudadanas"
+                  class="materia-icon"
+                />
+                <span class="materia-nombre">Sociales y Ciudadanas</span>
+              </div>
+              <div class="materia-puntaje">
+                <span class="materia-puntos">{{socialesAciertos}}</span
+                ><span class="materia-denominador">/100</span>
+              </div>
+              <div class="materia-percentil">
+                <div class="percentil-label">¿En qué percentiles estás?</div>
+                <div class="percentil-subtitle">
+                  Estudiantes en este simulacro
+                </div>
+                <div class="mini-percentil">{{socialesPercentil}}</div>
+                <div class="mini-bar">
+                  {{socialesMiniBar}}
+                </div>
+
+                <div class="mini-percentil-labels">
+                  <span>0</span>
+                  <span>20</span>
+                  <span>40</span>
+                  <span>60</span>
+                  <span>80</span>
+                  <span>100</span>
+                </div>
+              </div>
+            </div>
+            <div class="materia-detalles">
+              <div class="nivel-desempeno">
+                <div class="nivel-titulo">Nivel de desempeño</div>
+                <div class="nivel-grafico">
+                  {{socialesNivelGrafico}}
+                </div>
+                <div class="nivel-pregunta">
+                  ¿Qué habilidades reflejan este nivel?
+                </div>
+              </div>
+              <div class="habilidades-contenedor">
+                <ul class="habilidades-lista">
+                  {{socialesHabilidades}}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ciencias Naturales -->
+          <div class="materia-card">
+            <div>
+              <div class="materia-header">
+                <img
+                  src="qrc:/qt/qml/DPMS_Gestor_PreICFES/src/templates/assets/naturales.png"
+                  alt="Ciencias Naturales"
+                  class="materia-icon"
+                />
+                <span class="materia-nombre">Ciencias Naturales</span>
+              </div>
+              <div class="materia-puntaje">
+                <span class="materia-puntos">{{naturalesAciertos}}</span
+                ><span class="materia-denominador">/100</span>
+              </div>
+              <div class="materia-percentil">
+                <div class="percentil-label">¿En qué percentiles estás?</div>
+                <div class="percentil-subtitle">
+                  Estudiantes en este simulacro
+                </div>
+                <div class="mini-percentil">{{naturalesPercentil}}</div>
+                <div class="mini-bar">
+                  {{naturalesMiniBar}}
+                </div>
+
+                <div class="mini-percentil-labels">
+                  <span>0</span>
+                  <span>20</span>
+                  <span>40</span>
+                  <span>60</span>
+                  <span>80</span>
+                  <span>100</span>
+                </div>
+              </div>
+            </div>
+            <div class="materia-detalles">
+              <div class="nivel-desempeno">
+                <div class="nivel-titulo">Nivel de desempeño</div>
+                <div class="nivel-grafico">
+                  {{naturalesNivelGrafico}}
+                </div>
+                <div class="nivel-pregunta">
+                  ¿Qué habilidades reflejan este nivel?
+                </div>
+              </div>
+              <div class="habilidades-contenedor">
+                <ul class="habilidades-lista">
+                  {{naturalesHabilidades}}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Inglés -->
+          <div class="materia-card">
+            <div>
+              <div class="materia-header">
+                <img
+                  src="qrc:/qt/qml/DPMS_Gestor_PreICFES/src/templates/assets/ingles.png"
+                  alt="Inglés"
+                  class="materia-icon"
+                />
+                <span class="materia-nombre">Inglés</span>
+              </div>
+              <div class="materia-puntaje">
+                <span class="materia-puntos">{{inglesAciertos}}</span
+                ><span class="materia-denominador">/100</span>
+              </div>
+              <div class="materia-percentil">
+                <div class="percentil-label">¿En qué percentiles estás?</div>
+                <div class="percentil-subtitle">
+                  Estudiantes en este simulacro
+                </div>
+                <div class="mini-percentil">{{inglesPercentil}}</div>
+                <div class="mini-bar">
+                  {{inglesMiniBar}}
+                </div>
+
+                <div class="mini-percentil-labels">
+                  <span>0</span>
+                  <span>20</span>
+                  <span>40</span>
+                  <span>60</span>
+                  <span>80</span>
+                  <span>100</span>
+                </div>
+              </div>
+            </div>
+            <div class="materia-detalles">
+              <div class="nivel-desempeno">
+                <div class="nivel-titulo">Nivel de desempeño</div>
+                <div class="nivel-grafico">
+                  {{inglesNivelGrafico}}
+                </div>
+                <div class="nivel-pregunta">
+                  ¿Qué habilidades reflejan este nivel?
+                </div>
+              </div>
+              <div class="habilidades-contenedor">
+                <ul class="habilidades-lista">
+                  {{inglesHabilidades}}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

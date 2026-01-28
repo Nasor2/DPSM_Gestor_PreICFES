@@ -1,0 +1,48 @@
+<RCC>
+    <qresource prefix="/src/templates">
+        <file alias="boletin.html">src/templates/boletin.html</file>
+        <file alias="stylesheet.css">src/templates/stylesheet.css</file>
+        <file alias="assets/lectura.png">src/templates/assets/lectura.png</file>
+        <file alias="assets/ingles.png">src/templates/assets/ingles.png</file>
+        <file alias="assets/mate.png">src/templates/assets/mate.png</file>
+        <file alias="assets/naturales.png">src/templates/assets/naturales.png</file>
+        <file alias="assets/sociales.png">src/templates/assets/sociales.png</file>
+        <file alias="assets/trophy-1.png">src/templates/assets/trophy-1.png</file>
+        <file alias="assets/trophy.png">src/templates/assets/trophy.png</file>
+    </qresource>
+    <qresource prefix="/">
+        <file>qml/Main.qml</file>
+        <file>qml/views/DashboardView.qml</file>
+        <file>qml/views/SimulacrumDetailView.qml</file>
+        <file>qml/components/SimulacrumWizard.qml</file>
+        <file>qml/components/ResultPopup.qml</file>
+        <file>qml/components/SubjectInput.qml</file>
+        <file>qml/components/ResultRow.qml</file>
+        <file>qml/components/SimulacrumDeleteDialog.qml</file>
+        <file>qml/views/SimulacrumStatsView.qml</file>
+        <file>qml/components/TableTopList.qml</file>
+        <file>qml/components/CustomAlert.qml</file>
+        <file>qml/components/DatePicker.qml</file>
+        <file>qml/views/StudentsView.qml</file>
+        <file>qml/components/StudentRow.qml</file>
+        <file>qml/components/StudentDetailPopup.qml</file>
+        <file>qml/components/StudentWizarad.qml</file>
+        <file>qml/views/ConfigView.qml</file>
+        <file>qml/components/SimulacrumRow.qml</file>
+        <file>qml/icons/logo_completo.png</file>
+        <file>qml/icons/logo.png</file>
+        <file>qml/icons/home.svg</file>
+        <file>qml/icons/home-purple.svg</file>
+        <file>qml/icons/book.svg</file>
+        <file>qml/icons/book-purple.svg</file>
+        <file>qml/icons/student.svg</file>
+        <file>qml/icons/student-purple.svg</file>
+        <file>qml/icons/wheel.svg</file>
+        <file>qml/icons/wheel-purple.svg</file>
+        <file>qml/icons/logo-icon.png</file>
+        <file>qml/icons/avatar.svg</file>
+        <file>qml/icons/simulacrum-icon.svg</file>
+        <file>qml/components/BoletinConfirmDialog.qml</file>
+        <file>qml/components/ExportAllBoletinesDialog.qml</file>
+    </qresource>
+</RCC>
