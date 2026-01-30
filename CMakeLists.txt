@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 project(DPMS_Gestor_PreICFES VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(QT_DEBUG_FIND_PACKAGE ON)
 
 find_package(Qt6 REQUIRED COMPONENTS
     Quick

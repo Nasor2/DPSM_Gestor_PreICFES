@@ -2,6 +2,7 @@
 #define SIMULACRUMSERVICE_H
 
 #include "database_manager.h"
+#include <qregularexpression.h>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -9,9 +10,12 @@
 
 class SimulacrumService {
 public:
-
-    //Global access singleton
-    static SimulacrumService& intance(){
+    SimulacrumService(const SimulacrumService &) = default;
+    SimulacrumService(SimulacrumService &&) = default;
+    SimulacrumService &operator=(const SimulacrumService &) = default;
+    SimulacrumService &operator=(SimulacrumService &&) = default;
+    // Global access singleton
+    static SimulacrumService &intance() {
         static SimulacrumService _instance;
         return _instance;
     }
@@ -27,15 +31,15 @@ public:
 
 
     //Step 1: create o get booklet
-    int setupBooklet(const std::string& name,
+    int setupBooklet(const std::string &name,
                      int l, int m, int s, int n, int i){
         Booklet b(name, l, m, s, n, i);
         return DatabaseManager::instance().saveBooklet(b);
     }
 
     //Setop 2: initializate simulacrum
-    int startSimulacrum(const std::string& name,
-                        const std::string& date,
+    int startSimulacrum(const std::string &name,
+                        const std::string &date,
                         int bookletId){
         if (name.empty()) return InvalidData;
 
@@ -45,26 +49,23 @@ public:
 
     //Step 3: register in burst
     bool registerStudentResult(int simulacrumId,
-                               const std::string& studentName,
-                               int l, int m, int s, int n, int i){
-        //Ensure student
-
-        int studentId = DatabaseManager::instance().asegurarStudents(studentName);
+                               const std::string &identification,
+                               const std::string &name,
+                               const std::string &school,
+                               int l, int m, int s, int n, int i) {
+        // CAMBIO: Asegura con todos los campos.
+        int studentId = DatabaseManager::instance().asegurarStudents(identification, name, school);
         if (studentId == -1) return false;
-
-        //Create object of domain result
         Result newResult(studentId, simulacrumId, l, m, s, n, i);
-
-        // Persistence
-        return DatabaseManager::instance().saveResult(newResult);
+        return DatabaseManager::instance().saveResult(newResult) > 0;
     }
 
     std::vector<Simulacrum> getAllSimulacrums(){
         return DatabaseManager::instance().getSimulacrums();
     }
 
-    int createFullSimulacrum(const std::string& simName, const std::string& date,
-                             const std::string& bookName, int l, int m, int s, int n, int i) {
+    int createFullSimulacrum(const std::string &simName, const std::string &date,
+                             const std::string &bookName, int l, int m, int s, int n, int i) {
         // Paso 1: Usamos TU setupBooklet
         int bId = setupBooklet(bookName, l, m, s, n, i);
         if (bId == -1) return -1;
@@ -145,7 +146,7 @@ public:
         }
 
         // --- ORDENAMIENTO ---
-        std::sort(allRanked.begin(), allRanked.end(), [](const StudentSummary& a, const StudentSummary& b) {
+        std::sort(allRanked.begin(), allRanked.end(), [](const StudentSummary &a, const StudentSummary &b) {
             return a.score > b.score; // De mayor a menor
         });
 
@@ -167,13 +168,15 @@ public:
     }
 
     // Dentro de la clase SimulacrumService
-    bool removeStudentResult(int simulacrumId, const std::string& studentName) {
-        // 1. Obtenemos el ID del estudiante (reutilizando tu lógica existente)
-        int studentId = DatabaseManager::instance().asegurarStudents(studentName);
-        if (studentId == -1) return false;
-
-        // 2. Pedimos a la infraestructura que lo borre
-        return DatabaseManager::instance().deleteResult(simulacrumId, studentId);
+    bool removeStudentResult(int simulacrumId, const std::string &identification) {
+        QSqlQuery q;
+        q.prepare("SELECT id FROM students WHERE identification = :ident");
+        q.bindValue(":ident", QString::fromStdString(identification));
+        if (q.exec() && q.next()) {
+            int studentId = q.value(0).toInt();
+            return DatabaseManager::instance().deleteResult(simulacrumId, studentId);
+        }
+        return false;
     }
 
 
@@ -237,9 +240,12 @@ public:
         SaveResultResponse(bool s = true, QString msg = "") : success(s), message(msg) {}
     };
 
-    SaveResultResponse registerStudentResultValidated(int simulacrumId,
-                                                      const std::string& studentName,
-                                                      int l, int m, int s, int n, int i) {
+    SaveResultResponse registerStudentResultValidated(
+    int simulacrumId,
+    const std::string &identification,
+    const std::string &studentName,
+    const std::string &school,
+    int l, int m, int s, int n, int i) {
         // 1. Obtener booklet del simulacro
         Booklet booklet = DatabaseManager::instance().getBookletBySimulacrumId(simulacrumId);
         if (booklet.getId() < 0) {
@@ -259,7 +265,7 @@ public:
         }
 
         // 3. Asegurar estudiante
-        int studentId = DatabaseManager::instance().asegurarStudents(studentName);
+        int studentId = DatabaseManager::instance().asegurarStudents(identification, studentName, school);
         if (studentId == -1) {
             return SaveResultResponse(false, "Error al registrar o buscar al estudiante.");
         }
@@ -277,43 +283,48 @@ public:
         }
     }
 
-    SaveResultResponse updateStudentResultValidated(int simulacrumId,
-                                                    const std::string& studentName,
-                                                    int l, int m, int s, int n, int i) {
-        // Mismo chequeo de booklet y límites que en register
+    SaveResultResponse updateStudentResultValidated(
+        int simulacrumId,
+        const std::string &identification,
+        const std::string &studentName,
+        const std::string &school,
+        int l, int m, int s, int n, int i)
+    {
+        // 1. Obtener booklet del simulacro
         Booklet booklet = DatabaseManager::instance().getBookletBySimulacrumId(simulacrumId);
         if (booklet.getId() < 0) {
             return SaveResultResponse(false, "No se encontró el cuadernillo asociado al simulacro.");
         }
 
+        // 2. Validar límites (mismo que antes)
         QString errorMsg;
         if (l > booklet.getTLectura()) errorMsg += QString("Lectura Crítica: máximo %1, ingresaste %2\n").arg(booklet.getTLectura()).arg(l);
         if (m > booklet.getTMatematicas()) errorMsg += QString("Matemáticas: máximo %1, ingresaste %2\n").arg(booklet.getTMatematicas()).arg(m);
         if (s > booklet.getTSociales()) errorMsg += QString("Sociales: máximo %1, ingresaste %2\n").arg(booklet.getTSociales()).arg(s);
         if (n > booklet.getTNaturales()) errorMsg += QString("Naturales: máximo %1, ingresaste %2\n").arg(booklet.getTNaturales()).arg(n);
         if (i > booklet.getTIngles()) errorMsg += QString("Inglés: máximo %1, ingresaste %2\n").arg(booklet.getTIngles()).arg(i);
-
         if (!errorMsg.isEmpty()) {
             return SaveResultResponse(false, "Los valores ingresados exceden el máximo permitido del cuadernillo:\n" + errorMsg);
         }
 
-        int studentId = DatabaseManager::instance().asegurarStudents(studentName);
+        // 3. Asegurar estudiante (ahora con los 3 campos)
+        int studentId = DatabaseManager::instance().asegurarStudents(identification, studentName, school);
         if (studentId == -1) {
             return SaveResultResponse(false, "Error al identificar al estudiante.");
         }
 
+        // 4. Crear objeto Result y actualizar
         Result r(studentId, simulacrumId, l, m, s, n, i);
         bool updated = DatabaseManager::instance().updateResult(r);
-
         if (updated) {
             return SaveResultResponse(true, "Resultado actualizado correctamente");
         } else {
-            return SaveResultResponse(false, "Error al actualizar el resultado.");
+            return SaveResultResponse(false, "Error al actualizar el resultado (quizá no existe el registro).");
         }
     }
 
-    int updateFullSimulacrum(int simId, const std::string& simName, const std::string& date,
-                             const std::string& bookName, int l, int m, int s, int n, int i) {
+    int updateFullSimulacrum(int simId, const std::string &simName, const std::string &date,
+                             const std::string &bookName, int l, int m, int s, int n, int i) {
         Simulacrum current = DatabaseManager::instance().getSimulacrumById(simId);
         if (current.getId() < 0) return -1;
 
@@ -339,18 +350,61 @@ public:
         return deletedSim;
     }
 
-    // Editar estudiante
-    bool updateStudent(int id, const std::string& newName) {
+    /* Editar estudiante
+    bool updateStudent(int id, const std::string& newName, const std::string& newSchool = "") {
         if (newName.empty()) return false;
-        // Verificar si el nuevo nombre ya existe (evitar duplicados)
-        QSqlQuery checkQuery;
-        checkQuery.prepare("SELECT id FROM students WHERE fullname = :nom AND id != :id");
-        checkQuery.bindValue(":nom", QString::fromStdString(newName));
-        checkQuery.bindValue(":id", id);
-        if (checkQuery.exec() && checkQuery.next()) {
-            return false;  // Duplicado
+        return DatabaseManager::instance().updateStudent(id, newName, newSchool);
+    }*/
+
+    bool updateStudentValidated(
+        int id,
+        const std::string& newName,
+        const std::string& newIdentification,
+        const std::string& newSchool)
+    {
+        // 1. Validaciones básicas (mismo estilo que registerStudentResultValidated)
+        if (newName.empty()) {
+            return false;
         }
-        return DatabaseManager::instance().updateStudent(id, newName);
+
+        QString ident = QString::fromStdString(newIdentification);
+        if (ident.isEmpty()) {
+            return false;
+        }
+
+        if (ident.length() < 6 || ident.length() > 10) {
+            return false;
+        }
+
+        // Solo dígitos (defensa extra)
+        QRegularExpression re("^[0-9]+$");
+        if (!re.match(ident).hasMatch()) {
+            return false;
+        }
+
+        // 2. Verificar duplicado (excluyendo el propio id)
+        QSqlQuery check;
+        check.prepare(
+            "SELECT id, fullname FROM students "
+            "WHERE identification = :ident AND id != :currentId"
+            );
+        check.bindValue(":ident", ident);
+        check.bindValue(":currentId", id);
+
+        if (check.exec() && check.next()) {
+            // Aquí podrías loguear o retornar false directamente
+            // No devolvemos mensaje específico porque el controller lo manejará
+            qDebug() << "Identificación duplicada para estudiante distinto";
+            return false;
+        }
+
+        // 3. Actualizar en la base
+        return DatabaseManager::instance().updateStudent(
+            id,
+            newName,
+            newIdentification,
+            newSchool
+            );
     }
 
     // Eliminar estudiante (full delete)
@@ -400,7 +454,7 @@ public:
         return DatabaseManager::instance().exportDatabase();
     }
 
-    QString importDatabaseFromFile(const std::string& filePath) {
+    QString importDatabaseFromFile(const std::string &filePath) {
         return DatabaseManager::instance().importDatabase(QString::fromStdString(filePath));
     }
 
@@ -446,6 +500,8 @@ public:
 
     struct BoletinData {
         std::string studentName;
+        std::string identification;
+        std::string school;
         std::string simulacroName;
         std::string fechaAplicacion;
         int puntajeGlobal = 0;
@@ -462,47 +518,38 @@ public:
         auto results = DatabaseManager::instance().getDetailedResultsBySimulacrum(simId);
         if (results.size() < 2) return 100; // No hay comparación real
 
-        std::vector<std::pair<int, std::string>> rankings; // <global, studentName>
-        int targetGlobal = 0;
-        std::string targetName;
-
-        // Primero obtenemos el nombre del estudiante objetivo (para comparar por string)
-        auto targetStudent = getStudentById(studentId);
-        if (targetStudent.getId() < 0) return 100;
-        targetName = targetStudent.getFullname();
+        std::vector<std::pair<int, int>> rankings; // <global, studentId>
+        int targetGlobal = -1;
 
         for (const auto& r : results) {
             Result temp(0, simId, r.l, r.m, r.s, r.n, r.i);
             Booklet book("", r.tL, r.tM, r.tS, r.tN, r.tI);
             int global = temp.calculateGlobalScore(book);
-            rankings.emplace_back(global, r.studentName);
+            rankings.emplace_back(global, r.studentId);
 
-            if (r.studentName == targetName) {
+            if (r.studentId == studentId) {
                 targetGlobal = global;
             }
         }
 
-        // Orden descendente (mayor puntaje primero)
+        if (targetGlobal == -1) return 100;  // No encontrado
+
+        // Orden descendente
         std::sort(rankings.rbegin(), rankings.rend());
 
         // Encontrar posición (contando empates como misma posición, pero para percentil usamos el peor caso)
         int position = 1;
-        bool found = false;
         for (const auto& rank : rankings) {
-            if (rank.second == targetName) {
-                found = true;
+            if (rank.second == studentId) {
                 break;
             }
-            if (rank.first > targetGlobal) position++;
-            else if (rank.first == targetGlobal) {
-                // Empate: para percentil conservador, contamos como posición siguiente
+            if (rank.first > targetGlobal) {
                 position++;
+            } else if (rank.first == targetGlobal) {
+                position++;  // empate conservador
             }
         }
 
-        if (!found) return 100; // No debería pasar, pero por seguridad
-
-        // Percentil = % de estudiantes que están por debajo
         double perc = (1.0 - (position - 1.0) / results.size()) * 100;
         return static_cast<int>(std::round(perc));
     }
@@ -511,45 +558,54 @@ public:
         auto results = DatabaseManager::instance().getDetailedResultsBySimulacrum(simId);
         if (results.size() < 2) return 100;
 
-        std::vector<std::pair<double, std::string>> rankings; // <porcentaje área, studentName>
-        double targetPorc = 0;
-        std::string targetName;
+        std::vector<std::pair<double, int>> rankings;  // <porcentaje área, studentId>
 
-        auto targetStudent = getStudentById(studentId);
-        if (targetStudent.getId() < 0) return 100;
-        targetName = targetStudent.getFullname();
+        double targetPorc = 0.0;
+        bool foundTarget = false;
 
         for (const auto& r : results) {
-            int aciertos = (areaIndex == 0 ? r.l : areaIndex == 1 ? r.m : areaIndex == 2 ? r.s : areaIndex == 3 ? r.n : r.i);
-            int total = (areaIndex == 0 ? r.tL : areaIndex == 1 ? r.tM : areaIndex == 2 ? r.tS : areaIndex == 3 ? r.tN : r.tI);
-            double porc = total > 0 ? (static_cast<double>(aciertos) / total) * 100 : 0;
-            rankings.emplace_back(porc, r.studentName);
+            int aciertos = (areaIndex == 0 ? r.l :
+                                areaIndex == 1 ? r.m :
+                                areaIndex == 2 ? r.s :
+                                areaIndex == 3 ? r.n : r.i);
 
-            if (r.studentName == targetName) {
+            int total = (areaIndex == 0 ? r.tL :
+                             areaIndex == 1 ? r.tM :
+                             areaIndex == 2 ? r.tS :
+                             areaIndex == 3 ? r.tN : r.tI);
+
+            double porc = (total > 0) ? (static_cast<double>(aciertos) / total) * 100.0 : 0.0;
+
+            rankings.emplace_back(porc, r.studentId);
+
+            if (r.studentId == studentId) {
                 targetPorc = porc;
+                foundTarget = true;
             }
         }
 
+        if (!foundTarget) return 100;  // El estudiante no está en los resultados
+
+        // Orden descendente (mayor porcentaje primero)
         std::sort(rankings.rbegin(), rankings.rend());
 
+        // Encontrar posición
         int position = 1;
-        bool found = false;
         for (const auto& rank : rankings) {
-            if (rank.second == targetName) {
-                found = true;
-                break;
+            if (rank.second == studentId) {
+                break;  // Encontrado
             }
-            if (rank.first > targetPorc) position++;
-            else if (std::abs(rank.first - targetPorc) < 0.001) { // Empate aproximado
+            if (rank.first > targetPorc) {
                 position++;
+            } else if (std::abs(rank.first - targetPorc) < 0.001) {  // Empate aproximado
+                position++;  // Conservador: contamos como posición siguiente
             }
         }
-
-        if (!found) return 100;
 
         double perc = (1.0 - (position - 1.0) / results.size()) * 100;
         return static_cast<int>(std::round(perc));
     }
+
 
     std::string calculateNivelStr(size_t areaIndex, double porcentaje) {
         if (areaIndex == 0) {
@@ -575,7 +631,7 @@ public:
         }
     }
 
-    std::vector<std::string> getHabilidadesPorMateriaYNivel(const std::string& materia, const std::string& nivel) {
+    std::vector<std::string> getHabilidadesPorMateriaYNivel(const std::string &materia, const std::string &nivel) {
         // Lectura Crítica - ejemplos (cámbialos)
         if (materia == "Lectura Crítica") {
             if (nivel == "4") return {
@@ -782,9 +838,14 @@ public:
         // 1. Datos básicos del estudiante y simulacro
         auto student = getStudentById(studentId);
         if (student.getId() < 0) return data; // inválido
+
         auto sim = getSimulacrumById(simId);
         if (sim.getId() < 0) return data;
+
         data.studentName = student.getFullname();
+        data.identification = student.getIdentification();
+        data.school         = student.getSchool();
+
         data.simulacroName = sim.getName();
         QDate fecha = QDate::fromString(QString::fromStdString(sim.getDate()), "yyyy-MM-dd");
         data.fechaAplicacion = fecha.isValid() ? fecha.toString("dd/MM/yyyy").toStdString() : sim.getDate();
@@ -797,7 +858,7 @@ public:
         DatabaseManager::FullResult studentResult;
         bool found = false;
         for (const auto& r : results) {
-            if (DatabaseManager::instance().asegurarStudents(r.studentName) == studentId) {
+            if (r.studentId == studentId) {   // ← mucho mejor
                 studentResult = r;
                 found = true;
                 break;

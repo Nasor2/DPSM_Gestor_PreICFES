@@ -7,7 +7,7 @@ import "icons"
 
 Window {
     id: root
-    width: 1200
+    width: 1250
     height: 800
     visible: true
     title: "DPSM Gestor PreICFES"

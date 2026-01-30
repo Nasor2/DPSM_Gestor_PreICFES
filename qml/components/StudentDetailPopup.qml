@@ -8,12 +8,14 @@ Popup {
 
     property int studentId: -1
     property string studentName: ""
+    property string identification: ""
+    property string school: ""
     property var simulacraList: []
 
-    width: Math.min(parent.width * 0.85, 600)
-    height: Math.min(parent.height * 0.75, 520)
+    width: Math.min(parent.width * 0.92, 560)
+    height: Math.min(parent.height * 0.85, 720)
     x: (parent.width - width) / 2
-    y: (parent.height - height) / 2
+    y: (parent.height - height) / 2 - parent.height * 0.02
     modal: true
     focus: true
     padding: 0
@@ -25,12 +27,27 @@ Popup {
     }
 
     function loadStudentData() {
-        var info = backend.getStudentInfo(studentId)
-        if (info && info.id) {
-            studentName = info.name
-            totalSimsText.text = info.totalSimulacra + " simulacro" + (info.totalSimulacra !== 1 ? "s" : "") + " realizados"
+        if (studentId <= 0) return;
+
+        // 1. Info básica (ya la tienes)
+        var info = backend.getStudentInfo(studentId);
+        if (info && info.id > 0) {
+            studentName = info.name || "Estudiante sin nombre";
+            totalSimsText.text = info.totalSimulacra + " simulacro"
+                               + (info.totalSimulacra !== 1 ? "s" : "")
+                               + " realizados";
         }
-        simulacraList = backend.getStudentSimulacraWithScores(studentId)
+
+        // 2. Traer datos completos del estudiante (incluye identification y school)
+        var studentData = backend.getStudentById(studentId);  // ← Este método ya existe y devuelve fullname, identification, school
+        if (studentData && studentData.id > 0) {
+            // Guardamos en propiedades para usarlas en el UI
+            control.identification = studentData.identification || "No registrada";
+            control.school = studentData.school || "No registrado";
+        }
+
+        // 3. Cargar historial de simulacros (sin cambios)
+        simulacraList = backend.getStudentSimulacraWithScores(studentId);
     }
 
     Overlay.modal: Rectangle {
@@ -106,7 +123,7 @@ Popup {
 
                 Column {
                     Layout.fillWidth: true
-                    spacing: 6
+                    spacing: 4
 
                     Text {
                         text: studentName
@@ -114,13 +131,15 @@ Popup {
                         font.bold: true
                         color: "white"
                         elide: Text.ElideRight
+                        width: parent.width
                     }
 
                     Text {
                         id: totalSimsText
                         text: "0 simulacros realizados"
-                        font.pixelSize: 14
+                        font.pixelSize: 13
                         color: "white"
+                        opacity: 0.85
                     }
                 }
 
@@ -156,11 +175,87 @@ Popup {
             spacing: 16
 
             Text {
+                text: "Información adicional"
+                font.pixelSize: 16
+                font.bold: true
+                color: "#1F2937"
+            }
+
+            // Información adicional del estudiante
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 70
+                radius: 10
+                color: "#F9FAFB"
+                border.color: "#E5E7EB"
+                border.width: 1
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 16
+                    spacing: 24
+
+                    // Identificación
+                    Column {
+                        Layout.fillWidth: true
+                        spacing: 4
+
+                        Text {
+                            text: "Identificación"
+                            font.pixelSize: 11
+                            color: "#6B7280"
+                            font.bold: true
+                        }
+
+                        Text {
+                            text: control.identification
+                            font.pixelSize: 14
+                            color: "#1F2937"
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    // Separador vertical
+                    Rectangle {
+                        Layout.preferredWidth: 1
+                        Layout.fillHeight: true
+                        Layout.topMargin: 8
+                        Layout.bottomMargin: 8
+                        color: "#E5E7EB"
+                    }
+
+                    // Colegio
+                    Column {
+                        Layout.fillWidth: true
+                        spacing: 4
+
+                        Text {
+                            text: "Colegio"
+                            font.pixelSize: 11
+                            color: "#6B7280"
+                            font.bold: true
+                        }
+
+                        Text {
+                            text: control.school
+                            font.pixelSize: 14
+                            color: "#1F2937"
+                            elide: Text.ElideRight
+                            wrapMode: Text.WordWrap
+                            maximumLineCount: 1
+                        }
+                    }
+                }
+            }
+
+
+            Text {
                 text: "Historial de Simulacros"
                 font.pixelSize: 16
                 font.bold: true
                 color: "#1F2937"
             }
+
 
             Rectangle {
                 Layout.fillWidth: true

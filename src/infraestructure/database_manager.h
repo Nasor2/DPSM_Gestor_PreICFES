@@ -43,23 +43,20 @@ public:
         return createTables();
     }
 
-    int asegurarStudents(const std::string &name){
+    int asegurarStudents(const std::string &identification, const std::string &name, const std::string &school) {
         QSqlQuery query;
-        query.prepare("SELECT id FROM students WHERE fullname = :nom");
-        query.bindValue(":nom", QString::fromStdString(name));
-
+        query.prepare("SELECT id FROM students WHERE identification = :ident");
+        query.bindValue(":ident", QString::fromStdString(identification));
         if (query.exec() && query.next()) {
             return query.value(0).toInt(); // Ya existía
         }
-
-        query.prepare("INSERT INTO students (fullname) VALUES (:nom)");
+        query.prepare("INSERT INTO students (identification, fullname, school) VALUES (:ident, :nom, :sch)");
+        query.bindValue(":ident", QString::fromStdString(identification));
         query.bindValue(":nom", QString::fromStdString(name));
-
+        query.bindValue(":sch", QString::fromStdString(school));
         if (query.exec()) {
-            return query.lastInsertId().toInt(); // New ID
+            return query.lastInsertId().toInt();
         }
-
-        //Search
         qDebug() << "Error en asegurarEstudiante:" << query.lastError().text();
         return -1;
     }
@@ -349,17 +346,25 @@ public:
         return query.exec();
     }
 
-    std::vector<Student> getAllStudents(){
+    std::vector<Student> getAllStudents() {
         std::vector<Student> list;
-        QSqlQuery query("SELECT fullname, id FROM students ORDER BY fullname ASC");
-        while(query.next()){
-            list.emplace_back(query.value(0).toString().toStdString(), query.value(1).toInt());
+        // CAMBIO: Selecciona todos los campos.
+        QSqlQuery query("SELECT fullname, identification, school, id FROM students ORDER BY fullname ASC");
+        while (query.next()) {
+            list.emplace_back(
+                query.value(0).toString().toStdString(), // fullname
+                query.value(1).toString().toStdString(), // identification
+                query.value(2).toString().toStdString(), // school
+                query.value(3).toInt() // id
+                );
         }
         return list;
     }
 
     struct FullResult {
         std::string studentName;
+        std::string identification;   // ← nuevo
+        std::string school;
         int studentId;
         int l, m, s, n, i; // Aciertos
         int tL, tM, tS, tN, tI; // Totales del cuadernillo
@@ -368,24 +373,46 @@ public:
     std::vector<FullResult> getDetailedResultsBySimulacrum(int idSim) {
         std::vector<FullResult> list;
         QSqlQuery query;
-        query.prepare("SELECT e.id, e.fullname, r.c_lectura, r.c_mate, r.c_sociales, r.c_naturales, r.c_ingles, "
-                      "b.preg_lectura, b.preg_mate, b.preg_sociales, b.preg_naturales, b.preg_ingles "
-                      "FROM results r "
-                      "JOIN students e ON r.id_student = e.id "
-                      "JOIN simulacrums s ON r.id_simulacrum = s.id "
-                      "JOIN booklets b ON s.id_booklet = b.id "
-                      "WHERE r.id_simulacrum = :idS");
+        query.prepare(
+            "SELECT e.id, e.fullname, e.identification, e.school, "
+            "r.c_lectura, r.c_mate, r.c_sociales, r.c_naturales, r.c_ingles, "
+            "b.preg_lectura, b.preg_mate, b.preg_sociales, b.preg_naturales, b.preg_ingles "
+            "FROM results r "
+            "JOIN students e ON r.id_student = e.id "
+            "JOIN simulacrums s ON r.id_simulacrum = s.id "
+            "JOIN booklets b ON s.id_booklet = b.id "
+            "WHERE r.id_simulacrum = :idS"
+            );
         query.bindValue(":idS", idSim);
-        if (query.exec()) {
-            while (query.next()) {
-                list.push_back({
-                    query.value(1).toString().toStdString(),  // fullname
-                    query.value(0).toInt(),                  // ← NUEVO: studentId
-                    query.value(2).toInt(), query.value(3).toInt(), query.value(4).toInt(), query.value(5).toInt(), query.value(6).toInt(),
-                    query.value(7).toInt(), query.value(8).toInt(), query.value(9).toInt(), query.value(10).toInt(), query.value(11).toInt()
-                });
-            }
+
+        if (!query.exec()) {
+            qDebug() << "Error en getDetailedResultsBySimulacrum:" << query.lastError().text();
+            return list;
         }
+
+        while (query.next()) {
+            FullResult fr;
+
+            fr.studentId     = query.value(0).toInt();                    // e.id
+            fr.studentName   = query.value(1).toString().toStdString();   // e.fullname
+            fr.identification = query.value(2).toString().toStdString();  // e.identification
+            fr.school        = query.value(3).toString().toStdString();   // e.school
+
+            fr.l = query.value(4).toInt();   // c_lectura
+            fr.m = query.value(5).toInt();   // c_mate
+            fr.s = query.value(6).toInt();   // c_sociales
+            fr.n = query.value(7).toInt();   // c_naturales
+            fr.i = query.value(8).toInt();   // c_ingles
+
+            fr.tL = query.value(9).toInt();  // preg_lectura
+            fr.tM = query.value(10).toInt(); // preg_mate
+            fr.tS = query.value(11).toInt(); // preg_sociales
+            fr.tN = query.value(12).toInt(); // preg_naturales
+            fr.tI = query.value(13).toInt(); // preg_ingles
+
+            list.push_back(fr);
+        }
+
         return list;
     }
 
@@ -420,15 +447,26 @@ public:
     }
 
     // Para editar estudiante
-    bool updateStudent(int id, const std::string& newName) {
+    bool updateStudent(int id, const std::string& newName, const std::string& newIdentification, const std::string& newSchool)
+    {
         QSqlQuery query;
-        query.prepare("UPDATE students SET fullname = :nom WHERE id = :id");
-        query.bindValue(":nom", QString::fromStdString(newName));
-        query.bindValue(":id", id);
+        query.prepare(
+            "UPDATE students SET "
+            "fullname = :nom, "
+            "identification = :ident, "
+            "school = :sch "
+            "WHERE id = :id"
+            );
+        query.bindValue(":nom",  QString::fromStdString(newName));
+        query.bindValue(":ident", QString::fromStdString(newIdentification));
+        query.bindValue(":sch",   QString::fromStdString(newSchool));
+        query.bindValue(":id",    id);
+
         if (!query.exec()) {
             qDebug() << "Error al actualizar estudiante:" << query.lastError().text();
             return false;
         }
+
         return true;
     }
 
@@ -472,12 +510,18 @@ public:
     // Para obtener info básica de estudiante (nombre y total simulacros)
     Student getStudentById(int id) {
         QSqlQuery query;
-        query.prepare("SELECT fullname FROM students WHERE id = :id");
+        // CAMBIO: Selecciona todos los campos.
+        query.prepare("SELECT fullname, identification, school FROM students WHERE id = :id");
         query.bindValue(":id", id);
         if (query.exec() && query.next()) {
-            return Student(query.value(0).toString().toStdString(), id);
+            return Student(
+                query.value(0).toString().toStdString(),
+                query.value(1).toString().toStdString(),
+                query.value(2).toString().toStdString(),
+                id
+                );
         }
-        return Student("", -1);
+        return Student("", "", "", -1);
     }
 
     int getStudentTotalSimulacra(int studentId) {
@@ -612,7 +656,8 @@ public:
         while (query.next()) {
             studentColumns << query.value(1).toString();
         }
-        if (!studentColumns.contains("id") || !studentColumns.contains("fullname")) {
+        if (!studentColumns.contains("id") || !studentColumns.contains("fullname") ||
+            !studentColumns.contains("identification") || !studentColumns.contains("school")) {
             qDebug() << "Estructura de tabla 'students' inválida";
             testDb.close();
             QSqlDatabase::removeDatabase("validation_connection");
@@ -716,9 +761,11 @@ private:
         bool success = true;
 
         //Students
-        if(!query.exec("CREATE TABLE IF NOT EXISTS students ("
-                   "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                        "fullname TEXT UNIQUE NOT NULL)")) success = false;
+        if (!query.exec("CREATE TABLE IF NOT EXISTS students ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "identification TEXT UNIQUE NOT NULL, "
+                        "fullname TEXT NOT NULL, "
+                        "school TEXT)")) success = false;
 
         //Booklets
         if(!query.exec("CREATE TABLE IF NOT EXISTS booklets ("

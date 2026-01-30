@@ -8,6 +8,9 @@ Popup {
 
     property bool isEditing: false
     property int currentSimulacroId: -1
+    property string currentIdentification: ""
+    property string currentName: ""
+    property string currentSchool: ""
     property var maxValues: ({
                                  "mat": 0,
                                  "lec": 0,
@@ -35,41 +38,177 @@ Popup {
         maxValues = maxVals
         suggestions = []
 
-        studentCombo.editText = resultData.studentName
-        lecIn.text = resultData.l
-        matIn.text = resultData.m
-        socIn.text = resultData.s
-        natIn.text = resultData.n
-        ingIn.text = resultData.i
+        currentIdentification = resultData.identification || ""
+        currentName = resultData.studentName || ""
+        currentSchool = resultData.school || ""
 
-        for (var i = 0; i < subjectRepeater.count; i++) {
-            var item = subjectRepeater.itemAt(i)
-            if (item) {
-                item.refreshFromHidden()
-            }
-        }
+        identificationCombo.text = currentIdentification
+        nameField.text = currentName
+        schoolCombo.text = currentSchool
 
+        lecIn.text = resultData.l || "0"
+        matIn.text = resultData.m || "0"
+        socIn.text = resultData.s || "0"
+        natIn.text = resultData.n || "0"
+        ingIn.text = resultData.i || "0"
+
+        refreshSubjectFields()
         control.open()
     }
 
     function clearFields() {
-        studentCombo.editText = ""
-        matIn.text = ""
+        identificationCombo.text = ""
+        nameField.text = ""
+        schoolCombo.text = ""
         lecIn.text = ""
+        matIn.text = ""
         socIn.text = ""
         natIn.text = ""
         ingIn.text = ""
+        refreshSubjectFields()
+    }
 
+    function refreshSubjectFields() {
         for (var i = 0; i < subjectRepeater.count; i++) {
             var item = subjectRepeater.itemAt(i)
-            if (item) {
+            if (item)
                 item.refreshFromHidden()
+        }
+    }
+
+    function findStudentByIdentification(identification) {
+        for (var i = 0; i < suggestions.length; i++) {
+            var student = suggestions[i]
+            if (student.identification === identification) {
+                return student
+            }
+        }
+        return null
+    }
+
+    /*
+    function tryAutoComplete() {
+        var student = findStudentByIdentification(identificationCombo.editText)
+        if (student) {
+            nameField.text = student.name
+            schoolCombo.text = student.school
+
+            // Buscar índice del colegio en el modelo
+            var schoolIndex = schoolCombo.model.indexOf(student.school)
+            if (schoolIndex !== -1) {
+                schoolCombo.currentIndex = schoolIndex
+            } else {
+                schoolCombo.currentIndex = 3 // "Otro"
+                schoolCombo.text = student.school
+            }
+        }
+    }*/
+    function tryAutoComplete() {
+        var student = findStudentByIdentification(identificationCombo.editText)
+        if (student) {
+            nameField.text = student.name || ""  // ✅ Fallback
+            schoolCombo.text = student.school || ""  // ✅ Fallback
+        }
+    }
+
+
+    function updateSuggestions() {
+        filteredSuggestions.clear()
+        var filter = identificationCombo.text.toLowerCase()
+
+        console.log("Filtrando con:", filter)
+        console.log("Total sugerencias originales:", suggestions.length)
+
+        for (var i = 0; i < control.suggestions.length; i++) {
+            var student = control.suggestions[i]
+            if (student.identification.toLowerCase().indexOf(filter) !== -1) {
+                console.log("Agregando:", student.identification, student.name, student.school)
+                filteredSuggestions.append({
+                    "identification": student.identification,
+                    "name": student.name,
+                    "school": student.school
+                })
+                if (filteredSuggestions.count >= 10) break
             }
         }
     }
 
+    /*
+    function selectSuggestion(index) {
+        var item = filteredSuggestions.get(index)
+        identificationCombo.text = item.identification
+        nameField.text = item.name
+
+        var schoolIndex = schoolCombo.model.indexOf(item.school)
+        if (schoolIndex !== -1) {
+            schoolCombo.currentIndex = schoolIndex
+        } else {
+            schoolCombo.currentIndex = 3
+            schoolCombo.editText = item.school
+        }
+
+        suggestionsPopup.close()
+        nameField.forceActiveFocus()
+    }*/
+
+    function selectSuggestion(index) {
+        if (index < 0 || index >= filteredSuggestions.count) return;
+
+        var item = filteredSuggestions.get(index)
+        identificationCombo.text = item.identification
+        nameField.text = item.name || ""
+        schoolCombo.text = item.school || ""
+
+        console.log("ident:", item.identification, "name:", item.name, "school:", item.school)
+
+        suggestionsPopup.close()
+        nameField.forceActiveFocus()
+    }
+
+    function updateSchoolSuggestions() {
+        filteredSchoolSuggestions.clear()
+        var filter = schoolCombo.text.toLowerCase().trim()
+
+        var predefinedSchools = [
+            "I. E. PIO XII",
+            "I. E. LEÓN XIII",
+            "I. E. T. A. DE"
+        ]
+
+        // Siempre agregar predefinidas (incluso si no hay filtro)
+        for (var i = 0; i < predefinedSchools.length; i++) {
+            var schoolName = predefinedSchools[i]
+            if (filter === "" || schoolName.toLowerCase().indexOf(filter) !== -1) {
+                filteredSchoolSuggestions.append({ "school": schoolName })
+            }
+        }
+
+        // Luego colegios de estudiantes (solo si coinciden o no hay filtro)
+        var addedSchools = {}
+        for (var j = 0; j < control.suggestions.length; j++) {
+            var student = control.suggestions[j]
+            var school = student.school
+            if (school && school !== "" && !addedSchools[school]) {
+                if (filter === "" || school.toLowerCase().indexOf(filter) !== -1) {
+                    var isPredefined = predefinedSchools.includes(school)
+                    if (!isPredefined) {
+                        filteredSchoolSuggestions.append({ "school": school })
+                        addedSchools[school] = true
+                    }
+                }
+            }
+            if (filteredSchoolSuggestions.count >= 10) break
+        }
+    }
+
+    function selectSchoolSuggestion(index) {
+        var item = filteredSchoolSuggestions.get(index)
+        schoolCombo.text = item.school
+        schoolSuggestionsPopup.close()
+    }
+
     width: Math.min(parent.width * 0.92, 640)
-    height: Math.min(parent.height * 0.85, 720)
+    height: Math.min(parent.height * 0.85, 740)
     x: (parent.width - width) / 2
     y: (parent.height - height) / 2 - parent.height * 0.02
     modal: true
@@ -257,7 +396,7 @@ Popup {
                         Text {
                             Layout.fillWidth: true
                             Layout.leftMargin: 52
-                            text: "Si el nombre del estudiante no existe en el sistema, se creará automáticamente al guardar el resultado."
+                            text: "Si la identificación no existe, se creará un nuevo estudiante automáticamente con los datos ingresados."
                             font.pixelSize: 13
                             color: "#1E40AF"
                             wrapMode: Text.WordWrap
@@ -266,7 +405,372 @@ Popup {
                     }
                 }
 
+                // Campo Identificacion
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 28
+                    Layout.rightMargin: 28
+                    spacing: 12
+
+                    // Campo Identificación
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 115
+                        radius: 12
+                        color: "#F8FAFC"
+                        border.color: "#E2E8F0"
+                        border.width: 1
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 20
+                            spacing: 10
+
+                            RowLayout {
+                                spacing: 8
+
+                                Rectangle {
+                                    width: 28
+                                    height: 28
+                                    radius: 6
+                                    color: isEditing ? "#E7FEF7" : "#E7F9FE"
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "#"
+                                        font.pixelSize: 14
+                                        font.bold: true
+                                        color: isEditing ? "#08A979" : "#0888A9"
+                                    }
+                                }
+
+                                Text {
+                                    text: "Identificación"
+                                    font.pixelSize: 14
+                                    font.bold: true
+                                    color: "#1F2937"
+                                }
+                            }
+
+                            // ✅ TextField simple (no ComboBox)
+                            TextField {
+                                id: identificationCombo
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 48
+                                enabled: !isEditing
+                                font.pixelSize: 15
+                                placeholderText: "Ej: 1234567890"
+                                maximumLength: 10
+                                selectByMouse: true
+
+                                property alias editText: identificationCombo.text
+
+                                validator: RegularExpressionValidator {
+                                    regularExpression: /^[0-9]{0,10}$/
+                                }
+
+                                background: Rectangle {
+                                    radius: 10
+                                    color: identificationCombo.enabled ? (identificationCombo.activeFocus ? "white" : "#FAFBFC") : "#F1F5F9"
+                                    border.color: {
+                                                if (!identificationCombo.enabled) return "#E2E8F0"
+                                                if (identificationCombo.activeFocus) {
+                                                    // Si está enfocado y tiene texto inválido → rojo
+                                                    if (identificationCombo.text.length > 0 && identificationCombo.text.length < 6) {
+                                                        return "#EF4444"  // Rojo
+                                                    }
+                                                    return isEditing ? "#08A979" : "#0888A9"  // Verde/Azul normal
+                                                }
+                                                return "#E2E8F0"  // Gris normal
+                                            }
+                                    border.width: identificationCombo.activeFocus ? 2 : 1
+                                    Behavior on border.color { ColorAnimation { duration: 150 } }
+                                    Behavior on color { ColorAnimation { duration: 150 } }
+                                }
+
+                                color: identificationCombo.enabled ? "#1F2937" : "#94A3B8"
+                                verticalAlignment: Text.AlignVCenter
+                                leftPadding: 16
+                                rightPadding: 16
+
+                                onActiveFocusChanged: {
+                                    if (!activeFocus) {
+                                        //tryAutoComplete()
+                                        suggestionsPopup.close()
+                                    }
+                                }
+
+                                onTextChanged: {
+                                    var cleaned = text.replace(/\D/g, '')
+                                    if (text !== cleaned) {
+                                        text = cleaned
+                                    }
+
+
+                                    if (activeFocus && text.length > 0) {
+                                        updateSuggestions()
+                                        if (suggestionsList.count > 0) {
+                                            suggestionsPopup.open()
+                                        }
+                                    } else {
+                                        suggestionsPopup.close()
+                                    }
+                                }
+
+                                Keys.onPressed: (event) => {
+                                    if (event.key === Qt.Key_Down && suggestionsPopup.opened) {
+                                        suggestionsList.incrementCurrentIndex()
+                                        event.accepted = true
+                                    } else if (event.key === Qt.Key_Up && suggestionsPopup.opened) {
+                                        suggestionsList.decrementCurrentIndex()
+                                        event.accepted = true
+                                    } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                        if (suggestionsPopup.opened && suggestionsList.currentIndex >= 0) {
+                                            selectSuggestion(suggestionsList.currentIndex)
+                                            event.accepted = true
+                                        } else {
+                                            tryAutoComplete()
+                                        }
+                                    } else if (event.key === Qt.Key_Escape) {
+                                        suggestionsPopup.close()
+                                        event.accepted = true
+                                    }
+                                }
+
+                                Popup {
+                                    id: suggestionsPopup
+                                    y: parent.height + 4
+                                    width: parent.width
+                                    height: Math.min(suggestionsList.contentHeight + 8, 200)
+                                    padding: 4
+
+                                    background: Rectangle {
+                                        color: "white"
+                                        radius: 8
+                                        border.color: "#CBD5E0"
+                                        border.width: 2
+                                    }
+
+                                    contentItem: ListView {
+                                        id: suggestionsList
+                                        clip: true
+                                        model: ListModel { id: filteredSuggestions }
+
+                                        ScrollBar.vertical: ScrollBar {
+                                            policy: ScrollBar.AsNeeded
+                                        }
+
+                                        delegate: ItemDelegate {
+                                            width: ListView.view.width
+                                            height: 40
+                                            highlighted: ListView.isCurrentItem
+
+                                            // ¡Propiedades explícitas para evitar problemas de scope!
+                                            property string ident: model ? model.identification : ""
+                                            property string nombre: model ? model.name : ""
+                                            property string cole: model ? model.school : ""
+
+                                            background: Rectangle {
+                                                color: parent.highlighted || parent.hovered ? "#F1F5F9" : "transparent"
+                                                radius: 6
+                                            }
+
+                                            contentItem: RowLayout {
+                                                spacing: 12
+
+                                                Text {
+                                                    text: ident
+                                                    font.pixelSize: 14
+                                                    font.bold: true
+                                                    color: "#1F2937"
+                                                }
+
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    text: model.name
+                                                    font.pixelSize: 13
+                                                    color: "#6B7280"
+                                                    elide: Text.ElideRight
+                                                }
+                                            }
+
+                                            onClicked: {
+                                                identificationCombo.text = ident
+                                                nameField.text = nombre || ""
+                                                schoolCombo.text = cole || ""
+
+                                                console.log("Clic exitoso → ident:", ident,
+                                                            "name:", nombre,
+                                                            "school:", cole)
+
+                                                suggestionsPopup.close()
+                                                nameField.forceActiveFocus()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+
+
+                        }
+                    }
+
+                    // Campo Colegio
+                    // Campo Colegio
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 115
+                        radius: 12
+                        color: "#F8FAFC"
+                        border.color: "#E2E8F0"
+                        border.width: 1
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 20
+                            spacing: 10
+
+                            RowLayout {
+                                spacing: 8
+
+                                Rectangle {
+                                    width: 28
+                                    height: 28
+                                    radius: 6
+                                    color: isEditing ? "#E7FEF7" : "#E7F9FE"
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "🏫"
+                                        font.pixelSize: 14
+                                    }
+                                }
+
+                                Text {
+                                    text: "Colegio"
+                                    font.pixelSize: 14
+                                    font.bold: true
+                                    color: "#1F2937"
+                                }
+                            }
+
+                            // ✅ TextField con autocompletado
+                            TextField {
+                                id: schoolCombo
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 48
+                                enabled: !isEditing
+                                font.pixelSize: 15
+                                placeholderText: "Selecciona o escribe el colegio"
+                                selectByMouse: true
+
+                                property alias editText: schoolCombo.text
+
+                                background: Rectangle {
+                                    radius: 10
+                                    color: schoolCombo.enabled ? (schoolCombo.activeFocus ? "white" : "#FAFBFC") : "#F1F5F9"
+                                    border.color: schoolCombo.activeFocus ? (isEditing ? "#08A979" : "#0888A9") : "#E2E8F0"
+                                    border.width: schoolCombo.activeFocus ? 2 : 1
+                                    Behavior on border.color { ColorAnimation { duration: 150 } }
+                                    Behavior on color { ColorAnimation { duration: 150 } }
+                                }
+
+                                color: schoolCombo.enabled ? "#1F2937" : "#94A3B8"
+                                verticalAlignment: Text.AlignVCenter
+                                leftPadding: 16
+                                rightPadding: 16
+
+                                onActiveFocusChanged: {
+                                    if (activeFocus) {
+                                        // Abrir siempre el popup al ganar foco
+                                        updateSchoolSuggestions()
+                                        schoolSuggestionsPopup.open()
+                                    } else {
+                                        schoolSuggestionsPopup.close()
+                                    }
+                                }
+
+                                onTextChanged: {
+                                    if (activeFocus) {
+                                        updateSchoolSuggestions()
+                                        if (schoolSuggestionsList.count > 0) {
+                                            schoolSuggestionsPopup.open()
+                                        } else {
+                                            schoolSuggestionsPopup.close()
+                                        }
+                                    }
+                                }
+
+                                Keys.onPressed: (event) => {
+                                    if (event.key === Qt.Key_Down && schoolSuggestionsPopup.opened) {
+                                        schoolSuggestionsList.incrementCurrentIndex()
+                                        event.accepted = true
+                                    } else if (event.key === Qt.Key_Up && schoolSuggestionsPopup.opened) {
+                                        schoolSuggestionsList.decrementCurrentIndex()
+                                        event.accepted = true
+                                    } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                        if (schoolSuggestionsPopup.opened && schoolSuggestionsList.currentIndex >= 0) {
+                                            selectSchoolSuggestion(schoolSuggestionsList.currentIndex)
+                                            event.accepted = true
+                                        }
+                                    } else if (event.key === Qt.Key_Escape) {
+                                        schoolSuggestionsPopup.close()
+                                        event.accepted = true
+                                    }
+                                }
+
+                                Popup {
+                                    id: schoolSuggestionsPopup
+                                    y: parent.height + 4
+                                    width: parent.width
+                                    height: Math.min(schoolSuggestionsList.contentHeight + 8, 200)
+                                    padding: 4
+
+                                    background: Rectangle {
+                                        color: "white"
+                                        radius: 8
+                                        border.color: "#CBD5E0"
+                                        border.width: 2
+                                    }
+
+                                    contentItem: ListView {
+                                        id: schoolSuggestionsList
+                                        clip: true
+                                        model: ListModel { id: filteredSchoolSuggestions }
+
+                                        ScrollBar.vertical: ScrollBar {
+                                            policy: ScrollBar.AsNeeded
+                                        }
+
+                                        delegate: ItemDelegate {
+                                            width: ListView.view.width
+                                            height: 40
+                                            highlighted: ListView.isCurrentItem
+
+                                            background: Rectangle {
+                                                color: parent.highlighted || parent.hovered ? "#F1F5F9" : "transparent"
+                                                radius: 6
+                                            }
+
+                                            contentItem: Text {
+                                                text: model.school
+                                                font.pixelSize: 14
+                                                color: "#1F2937"
+                                                verticalAlignment: Text.AlignVCenter
+                                                leftPadding: 12
+                                            }
+
+                                            onClicked: selectSchoolSuggestion(index)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 // Campo Estudiante
+                // Campo Nombre Completo
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.leftMargin: 28
@@ -301,27 +805,27 @@ Popup {
                             }
 
                             Text {
-                                text: "Nombre del Estudiante"
+                                text: "Nombre Completo"
                                 font.pixelSize: 14
                                 font.bold: true
                                 color: "#1F2937"
                             }
                         }
 
-                        ComboBox {
-                            id: studentCombo
+                        TextField {
+                            id: nameField
                             Layout.fillWidth: true
                             Layout.preferredHeight: 48
-                            editable: true
-                            model: control.suggestions
                             enabled: !isEditing
                             font.pixelSize: 15
+                            placeholderText: "Ej: Juan Pérez García"
+                            selectByMouse: true
 
                             background: Rectangle {
                                 radius: 10
-                                color: studentCombo.enabled ? (studentCombo.activeFocus ? "white" : "#FAFBFC") : "#F1F5F9"
-                                border.color: studentCombo.activeFocus ? (isEditing ? "#08A979" : "#0888A9") : "#E2E8F0"
-                                border.width: studentCombo.activeFocus ? 2 : 1
+                                color: nameField.enabled ? (nameField.activeFocus ? "white" : "#FAFBFC") : "#F1F5F9"
+                                border.color: nameField.activeFocus ? (isEditing ? "#08A979" : "#0888A9") : "#E2E8F0"
+                                border.width: nameField.activeFocus ? 2 : 1
                                 Behavior on border.color {
                                     ColorAnimation {
                                         duration: 150
@@ -334,15 +838,10 @@ Popup {
                                 }
                             }
 
-                            contentItem: TextInput {
-                                text: studentCombo.editText
-                                font: studentCombo.font
-                                color: studentCombo.enabled ? "#1F2937" : "#94A3B8"
-                                verticalAlignment: Text.AlignVCenter
-                                leftPadding: 16
-                                rightPadding: studentCombo.indicator.width + studentCombo.spacing
-                                selectByMouse: true
-                            }
+                            color: nameField.enabled ? "#1F2937" : "#94A3B8"
+                            verticalAlignment: Text.AlignVCenter
+                            leftPadding: 16
+                            rightPadding: 16
                         }
                     }
                 }
@@ -556,6 +1055,7 @@ Popup {
         }
 
         // Footer
+        // Footer
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 88
@@ -611,14 +1111,16 @@ Popup {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 48
                     text: isEditing ? "Guardar Cambios" : "Guardar Resultado"
-                    enabled: studentCombo.editText !== ""
+                    enabled: identificationCombo.editText !== ""
+                             && nameField.text !== ""
 
                     background: Rectangle {
                         radius: 10
                         color: {
-                            if (!parent.enabled) return "#CBD5E0"
+                            if (!parent.enabled)
+                                return "#CBD5E0"
 
-                            if (parent.hovered){
+                            if (parent.hovered) {
                                 return isEditing ? "#057050" : "#055B70"
                             } else {
                                 return isEditing ? "#08A979" : "#0888A9"
@@ -645,20 +1147,42 @@ Popup {
                     }
 
                     onClicked: {
-                        let l = parseInt(lecIn.text) || 0
-                        let m = parseInt(matIn.text) || 0
-                        let soc = parseInt(socIn.text) || 0
-                        let nat = parseInt(natIn.text) || 0
-                        let ing = parseInt(ingIn.text) || 0
+                        let ident  = identificationCombo.text.trim()
+                        let name   = nameField.text.trim()
+                        let school = schoolCombo.text.trim()
+
+                        // Validaciones básicas en frontend (UX rápida)
+                        if (ident === "" || name === "") {
+                            alertSystem.showAlert("Campos requeridos", "Identificación y Nombre son obligatorios", "error")
+                            return
+                        }
+
+                        if (ident.length < 6 || ident.length > 10) {
+                            alertSystem.showAlert(
+                                "Identificación inválida",
+                                "La identificación debe tener entre 6 y 10 dígitos numéricos.",
+                                "error"
+                            )
+                            identificationCombo.forceActiveFocus()
+                            identificationCombo.selectAll()
+                            return
+                        }
+
+                        // Guardar directamente
+                        let l   = parseInt(lecIn.text)   || 0
+                        let m   = parseInt(matIn.text)   || 0
+                        let soc = parseInt(socIn.text)   || 0
+                        let nat = parseInt(natIn.text)   || 0
+                        let ing = parseInt(ingIn.text)   || 0
 
                         let response
                         if (isEditing) {
                             response = backend.updateStudentResult(
-                                currentSimulacroId, studentCombo.editText, l, m, soc, nat, ing
+                                currentSimulacroId, ident, name, school, l, m, soc, nat, ing
                             )
                         } else {
                             response = backend.addResult(
-                                currentSimulacroId, studentCombo.editText, l, m, soc, nat, ing
+                                currentSimulacroId, ident, name, school, l, m, soc, nat, ing
                             )
                         }
 
@@ -667,7 +1191,20 @@ Popup {
                             control.saved()
                             control.close()
                         } else {
-                            alertSystem.showAlert("Error al guardar", response.message, "error")
+                            // Mejoramos un poco el mensaje según lo que devuelva el backend
+                            let msg = response.message
+                            if (msg.includes("ya tiene resultados registrados")) {
+                                alertSystem.showAlert(
+                                    "Ya registrado en este simulacro",
+                                    "Este estudiante ya tiene calificaciones en este simulacro.\n" +
+                                    "Si quieres modificarlas, usa el modo edición.",
+                                    "warning"
+                                )
+                            } else if (msg.includes("exceden el máximo permitido")) {
+                                alertSystem.showAlert("Valores inválidos", msg, "error")
+                            } else {
+                                alertSystem.showAlert("Error al guardar", msg, "error")
+                            }
                         }
                     }
                 }

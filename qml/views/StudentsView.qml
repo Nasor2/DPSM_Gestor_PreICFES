@@ -15,6 +15,26 @@ Item {
         console.log("Estudiantes cargados:", studentsModel.length)
     }
 
+    function filterStudents(searchText) {
+        if (!searchText) return viewRoot.studentsModel
+
+        var filtered = []
+        var searchLower = searchText.toLowerCase().trim()
+
+        for (var i = 0; i < viewRoot.studentsModel.length; i++) {
+            var stu = viewRoot.studentsModel[i]
+            if (!stu) continue
+
+            if ((stu.name         || "").toLowerCase().includes(searchLower) ||
+                (stu.identification || "").toLowerCase().includes(searchLower) ||
+                (stu.school       || "").toLowerCase().includes(searchLower)) {
+                filtered.push(stu)
+            }
+        }
+
+        return filtered
+    }
+
     Component.onCompleted: refreshData()
 
     readonly property color colorPrimary: "#06781D"
@@ -118,7 +138,8 @@ Item {
                     id: searchField
                     Layout.fillWidth: true
                     Layout.preferredHeight: parent.height
-                    placeholderText: "Buscar estudiante..."
+                    placeholderText: "Buscar por nombre, identificación o colegio..."
+                    placeholderTextColor: "#94A3B8"
                     font.pixelSize: 15
                     color: "#1F2937"
                     selectByMouse: true
@@ -206,6 +227,26 @@ Item {
                         }
 
                         Text {
+                                Layout.preferredWidth: 120
+                                text: "Identificación"
+                                font.pixelSize: 13
+                                font.bold: true
+                                color: "#1F2937"
+                                horizontalAlignment: Text.AlignHCenter
+                                visible: viewRoot.width > 800
+                            }
+
+                            Text {
+                                Layout.preferredWidth: 160
+                                text: "Colegio"
+                                font.pixelSize: 13
+                                font.bold: true
+                                color: "#1F2937"
+                                horizontalAlignment: Text.AlignHCenter
+                                visible: viewRoot.width > 900
+                            }
+
+                        Text {
                             Layout.preferredWidth: 80
                             text: "Acciones"
                             font.pixelSize: 13
@@ -248,36 +289,20 @@ Item {
                         anchors.fill: parent
                         clip: true
 
-                        model: {
-                            if (searchField.text === "")
-                                return viewRoot.studentsModel
-                            var filtered = []
-                            var searchLower = searchField.text.toLowerCase()
-                            for (var i = 0; i < viewRoot.studentsModel.length; i++) {
-                                var stu = viewRoot.studentsModel[i]
-                                if (stu.name.toLowerCase().indexOf(
-                                            searchLower) !== -1) {
-                                    filtered.push(stu)
-                                }
-                            }
-                            return filtered
-                        }
+                        model: filterStudents(searchField.text)
 
                         delegate: StudentRow {
                             width: studentsList.width
                             studentData: modelData
                             rowIndex: index
-
                             onEditClicked: {
                                 studentWizard.openForEdit(modelData)
                             }
-
                             onDeleteClicked: {
                                 deleteConfirm.studentId = modelData.id
                                 deleteConfirm.studentName = modelData.name
                                 deleteConfirm.open()
                             }
-
                             onClicked: {
                                 studentDetailPopup.studentId = modelData.id
                                 studentDetailPopup.studentName = modelData.name
@@ -285,9 +310,11 @@ Item {
                             }
                         }
 
-                        // Estado vacío
+                        // Mensaje de estado vacío → ahora sincronizado con el filtro real
                         Column {
-                            visible: studentsList.count === 0
+                            visible: filterStudents(searchField.text).length === 0
+                                     && searchField.text !== ""
+
                             anchors.centerIn: parent
                             spacing: 16
 
@@ -299,9 +326,10 @@ Item {
                                 border.color: "#E5E7EB"
                                 border.width: 2
                                 anchors.horizontalCenter: parent.horizontalCenter
+
                                 Text {
                                     anchors.centerIn: parent
-                                    text: searchField.text === "" ? "E" : "⌕"
+                                    text: "⌕"
                                     font.pixelSize: 32
                                     font.bold: true
                                     color: colorPrimary
@@ -309,7 +337,7 @@ Item {
                             }
 
                             Text {
-                                text: searchField.text === "" ? "No hay estudiantes registrados" : "No se encontraron resultados"
+                                text: "No se encontraron estudiantes"
                                 font.pixelSize: 16
                                 font.bold: true
                                 color: "#1F2937"
@@ -317,7 +345,51 @@ Item {
                             }
 
                             Text {
-                                text: searchField.text === "" ? "Los estudiantes se crean automáticamente al ingresar resultados" : "Intenta con otro nombre"
+                                text: "Intenta con otro nombre, identificación o colegio"
+                                font.pixelSize: 14
+                                color: "#6B7280"
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                width: 300
+                                wrapMode: Text.WordWrap
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                        }
+
+                        // Mensaje cuando NO hay búsqueda pero tampoco hay estudiantes
+                        Column {
+                            visible: studentsList.count === 0 && searchField.text === ""
+
+                            anchors.centerIn: parent
+                            spacing: 16
+
+                            Rectangle {
+                                width: 80
+                                height: 80
+                                radius: 40
+                                color: "#F9FAFB"
+                                border.color: "#E5E7EB"
+                                border.width: 2
+                                anchors.horizontalCenter: parent.horizontalCenter
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "E"
+                                    font.pixelSize: 32
+                                    font.bold: true
+                                    color: colorPrimary
+                                }
+                            }
+
+                            Text {
+                                text: "No hay estudiantes registrados"
+                                font.pixelSize: 16
+                                font.bold: true
+                                color: "#1F2937"
+                                anchors.horizontalCenter: parent.horizontalCenter
+                            }
+
+                            Text {
+                                text: "Los estudiantes se crean automáticamente al ingresar resultados"
                                 font.pixelSize: 14
                                 color: "#6B7280"
                                 anchors.horizontalCenter: parent.horizontalCenter

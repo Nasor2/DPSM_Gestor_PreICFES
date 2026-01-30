@@ -81,7 +81,6 @@ body {
   gap: 8pt;
   padding: 6pt;
   border-bottom: 1pt solid #ddd;
-  margin-bottom: 8pt;
 }
 
 .dato-item label {
@@ -94,7 +93,7 @@ body {
 .dato-item span {
   display: block;
   color: #494949;
-  font-size: 10pt;
+  font-size: 8pt;
   font-weight: 600;
 }
 
@@ -420,7 +419,7 @@ body {
 }
 
 .habilidades-lista li {
-  font-size: 7.5pt;
+  font-size: 7pt;
   color: #494949;
   margin-bottom: 3pt;
   padding-left: 8pt;

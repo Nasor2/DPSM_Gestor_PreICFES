@@ -29,21 +29,31 @@ public:
     Q_INVOKABLE QVariantMap getSimulacrumStats(int simId);
 
     // --- Funciones de Resultados ---
-    Q_INVOKABLE QVariantMap addResult(int simId, QString studentName, int l, int m, int s, int n, int i);
+    Q_INVOKABLE QVariantMap addResult(int simId,
+                                      QString identification,
+                                      QString studentName,
+                                      QString school,
+                                      int l, int m, int s, int n, int i);
     Q_INVOKABLE QVariantList getDetailedResults(int simId);
     Q_INVOKABLE QVariantList getFullResultsList(int simId);
-    Q_INVOKABLE QVariantMap updateStudentResult(int simId, QString studentName, int l, int m, int s, int n, int i);
-    Q_INVOKABLE bool deleteResult(int simId, QString studentName);
+
+    Q_INVOKABLE QVariantMap updateStudentResult(int simId,
+                                                QString identification,
+                                                QString studentName,
+                                                QString school,
+                                                int l, int m, int s, int n, int i);
+    Q_INVOKABLE bool deleteResult(int simId, QString identification);
 
     // --- Funciones de Estudiantes ---
-    Q_INVOKABLE QStringList getStudentSuggestions();
+    Q_INVOKABLE QVariantList getStudentSuggestions();
     Q_INVOKABLE QVariantList getStudentsList();
-    Q_INVOKABLE QVariantMap updateStudent(int id, QString newName);
+    Q_INVOKABLE QVariantMap updateStudent(int id, QString newName, QString newIdentification, QString newSchool);
     Q_INVOKABLE QVariantMap deleteStudent(int id);
     Q_INVOKABLE QVariantList getStudentSimulacra(int studentId);
     Q_INVOKABLE QVariantMap getStudentInfo(int studentId);
     Q_INVOKABLE QVariantList getStudentSimulacraWithScores(int studentId);
     QString formatStudentName(const QString& rawName);
+    Q_INVOKABLE QVariantMap getStudentById(int studentId);
 
     // --- Dashboards y Estadísticas ---
     Q_INVOKABLE QVariantList getEvolutionGraphData();

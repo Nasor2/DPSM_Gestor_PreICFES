@@ -79,6 +79,30 @@ Rectangle {
             verticalAlignment: Text.AlignVCenter
         }
 
+        // Identificación (visible > 800px)
+        Text {
+            Layout.preferredWidth: 120
+            text: studentData.identification || "N/A"
+            font.pixelSize: 14
+            color: "#6B7280"
+            elide: Text.ElideRight
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            visible: rowRoot.width > 800
+        }
+
+        // Colegio (visible > 900px)
+        Text {
+            Layout.preferredWidth: 160
+            text: studentData.school || "Sin colegio"
+            font.pixelSize: 14
+            color: "#6B7280"
+            elide: Text.ElideRight
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            visible: rowRoot.width > 900
+        }
+
         // Botón de menú (tres puntos)
         Item {
             Layout.preferredWidth: 80

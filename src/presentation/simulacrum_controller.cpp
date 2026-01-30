@@ -109,12 +109,24 @@ QVariantMap SimulacrumController::deleteFullSimulacrum(int simId) {
 
 // --- 2. Gestión de Resultados ---
 
-QVariantMap SimulacrumController::addResult(int simId, QString studentName, int l, int m, int s, int n, int i) {
+QVariantMap SimulacrumController::addResult(int simId,
+                                            QString identification,
+                                            QString studentName,
+                                            QString school,
+                                            int l, int m, int s, int n, int i)
+{
+    // Opcional: formatear nombre si lo deseas
+    QString formattedName = formatStudentName(studentName);
 
-    QString formatted = formatStudentName(studentName);
-
+    // Llamada actualizada con los 3 campos de estudiante
     auto resp = SimulacrumService::intance().registerStudentResultValidated(
-        simId, formatted.toStdString(), l, m, s, n, i);
+        simId,
+        identification.toStdString(),
+        formattedName.toStdString(),
+        school.toStdString(),
+        l, m, s, n, i
+        );
+
     QVariantMap map;
     map["success"] = resp.success;
     map["message"] = resp.message;
@@ -133,10 +145,10 @@ QVariantList SimulacrumController::getDetailedResults(int simId) {
     return result;
 }
 
-QVariantList SimulacrumController::getFullResultsList(int simId) {
+QVariantList SimulacrumController::getFullResultsList(int simId)
+{
     auto list = DatabaseManager::instance().getDetailedResultsBySimulacrum(simId);
 
-    // Estructura temporal para calcular y ordenar
     struct ResultWithScore {
         DatabaseManager::FullResult result;
         int globalScore;
@@ -144,50 +156,62 @@ QVariantList SimulacrumController::getFullResultsList(int simId) {
 
     std::vector<ResultWithScore> resultsWithScores;
 
-    // Calcular puntajes globales
     for (const auto& res : list) {
         Result tempRes(0, simId, res.l, res.m, res.s, res.n, res.i);
         Booklet tempBook("", res.tL, res.tM, res.tS, res.tN, res.tI);
         int globalScore = tempRes.calculateGlobalScore(tempBook);
-
         resultsWithScores.push_back({res, globalScore});
     }
 
-    // ORDENAR de MAYOR a MENOR puntaje
     std::sort(resultsWithScores.begin(), resultsWithScores.end(),
               [](const ResultWithScore& a, const ResultWithScore& b) {
-                  return a.globalScore > b.globalScore;  // Mayor primero
+                  return a.globalScore > b.globalScore;
               });
 
-    // Convertir a QVariantList (ya ordenado)
     QVariantList result;
     for (const auto& item : resultsWithScores) {
         QVariantMap map;
-        map["studentId"] = item.result.studentId;
-        map["studentName"] = QString::fromStdString(item.result.studentName);
+        map["studentId"]       = item.result.studentId;
+        map["studentName"]     = QString::fromStdString(item.result.studentName);
+        map["identification"]  = QString::fromStdString(item.result.identification);   // ← NUEVO
+        map["school"]          = QString::fromStdString(item.result.school);           // ← NUEVO
         map["l"] = item.result.l;
         map["m"] = item.result.m;
         map["s"] = item.result.s;
         map["n"] = item.result.n;
         map["i"] = item.result.i;
-        map["global"] = item.globalScore;  // Ya calculado
+        map["global"] = item.globalScore;
         result.append(map);
     }
 
     return result;
 }
 
-QVariantMap SimulacrumController::updateStudentResult(int simId, QString studentName, int l, int m, int s, int n, int i) {
+
+QVariantMap SimulacrumController::updateStudentResult(int simId,
+                                                      QString identification,
+                                                      QString studentName,
+                                                      QString school,
+                                                      int l, int m, int s, int n, int i)
+{
+    QString formattedName = formatStudentName(studentName);
+
     auto resp = SimulacrumService::intance().updateStudentResultValidated(
-        simId, studentName.toStdString(), l, m, s, n, i);
+        simId,
+        identification.toStdString(),
+        formattedName.toStdString(),
+        school.toStdString(),
+        l, m, s, n, i
+        );
+
     QVariantMap map;
     map["success"] = resp.success;
     map["message"] = resp.message;
     return map;
 }
 
-bool SimulacrumController::deleteResult(int simId, QString studentName) {
-    return SimulacrumService::intance().removeStudentResult(simId, studentName.toStdString());
+bool SimulacrumController::deleteResult(int simId, QString identification) {
+    return SimulacrumService::intance().removeStudentResult(simId, identification.toStdString());
 }
 
 // --- 3. Gestión de Estudiantes ---
@@ -205,11 +229,17 @@ QString SimulacrumController::formatStudentName(const QString& rawName) {
     return words.join(" ");
 }
 
-QStringList SimulacrumController::getStudentSuggestions() {
+QVariantList SimulacrumController::getStudentSuggestions() {
     auto students = DatabaseManager::instance().getAllStudents();
-    QStringList names;
-    for(const auto& s : students) names << QString::fromStdString(s.getFullname());
-    return names;
+    QVariantList suggestions;
+    for (const auto& s : students) {
+        QVariantMap studentMap;
+        studentMap["identification"] = QString::fromStdString(s.getIdentification());
+        studentMap["name"] = QString::fromStdString(s.getFullname());
+        studentMap["school"] = QString::fromStdString(s.getSchool());
+        suggestions << studentMap;
+    }
+    return suggestions;
 }
 
 QVariantList SimulacrumController::getStudentsList() {
@@ -219,18 +249,28 @@ QVariantList SimulacrumController::getStudentsList() {
         QVariantMap map;
         map["id"] = s.getId();
         map["name"] = QString::fromStdString(s.getFullname());
+        map["identification"] = QString::fromStdString(s.getIdentification()); // CAMBIO
+        map["school"] = QString::fromStdString(s.getSchool()); // CAMBIO
         list.append(map);
     }
     return list;
 }
 
-QVariantMap SimulacrumController::updateStudent(int id, QString newName) {
+QVariantMap SimulacrumController::updateStudent(int id, QString newName, QString newIdentification, QString newSchool)
+{
     QString formatted = formatStudentName(newName);
 
-    bool success = SimulacrumService::intance().updateStudent(id, formatted.toStdString());
+    bool success = SimulacrumService::intance().updateStudentValidated(
+        id,
+        formatted.toStdString(),
+        newIdentification.toStdString(),
+        newSchool.toStdString()
+        );
+
     QVariantMap map;
     map["success"] = success;
-    map["message"] = success ? "Actualizado" : "Error (nombre duplicado)";
+    map["message"] = success ? "Estudiante actualizado correctamente"
+                             : "No se pudo actualizar. Verifica que la identificación sea válida y no esté duplicada.";
     return map;
 }
 
@@ -265,6 +305,19 @@ QVariantMap SimulacrumController::getStudentInfo(int studentId) {
     map["id"] = student.getId();
     map["name"] = QString::fromStdString(student.getFullname());
     map["totalSimulacra"] = SimulacrumService::intance().getStudentTotalSimulacra(studentId);
+    return map;
+}
+
+QVariantMap SimulacrumController::getStudentById(int studentId) {
+    auto student = SimulacrumService::intance().getStudentById(studentId);
+    QVariantMap map;
+    if (student.getId() < 0) return map;
+
+    map["id"] = student.getId();
+    map["fullname"] = QString::fromStdString(student.getFullname());
+    map["identification"] = QString::fromStdString(student.getIdentification());
+    map["school"] = QString::fromStdString(student.getSchool());
+
     return map;
 }
 
@@ -322,7 +375,7 @@ QVariantList SimulacrumController::getTopStudentsGlobal() {
         for (const auto& sim : simulacros) {
             auto results = DatabaseManager::instance().getDetailedResultsBySimulacrum(sim.getId());
             for (const auto& res : results) {
-                if (res.studentName == s.getFullname()) {
+                if (res.studentId == s.getId()) {
                     Result tr(0, sim.getId(), res.l, res.m, res.s, res.n, res.i);
                     Booklet tb("", res.tL, res.tM, res.tS, res.tN, res.tI);
                     totalSum += tr.calculateGlobalScore(tb);
@@ -414,6 +467,8 @@ QString SimulacrumController::buildHtmlFromData(const SimulacrumService::Boletin
 
     // 4. Reemplazos básicos (datos generales)
     html.replace("{{studentName}}", QString::fromStdString(data.studentName));
+    html.replace("{{identification}}",  QString::fromStdString(data.identification));
+    html.replace("{{school}}",          QString::fromStdString(data.school));
     html.replace("{{simulacroName}}", QString::fromStdString(data.simulacroName));
     html.replace("{{fechaAplicacion}}", QString::fromStdString(data.fechaAplicacion));
     html.replace("{{puntajeGlobal}}", QString::number(data.puntajeGlobal));

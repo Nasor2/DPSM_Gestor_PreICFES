@@ -21,7 +21,8 @@ Item {
                                     })
 
     function loadSimulacroDetails() {
-        if (simulacroId <= 0) return
+        if (simulacroId <= 0)
+            return
 
         console.log("Refrescando detalle completo para ID:", simulacroId)
 
@@ -55,6 +56,28 @@ Item {
         if (statsView) {
             statsView.loadData()
         }
+    }
+
+    // Agrega esta función en el Item principal (detailRoot)
+    function filterResults(searchText) {
+        if (!searchText) return detailRoot.resultsModel
+
+        var filtered = []
+        var searchLower = searchText.toLowerCase().trim()
+
+        for (var i = 0; i < detailRoot.resultsModel.length; i++) {
+            var r = detailRoot.resultsModel[i]
+
+            if (!r) continue
+
+            if ((r.studentName     || "").toLowerCase().includes(searchLower) ||
+                (r.identification  || "").toLowerCase().includes(searchLower) ||
+                (r.school          || "").toLowerCase().includes(searchLower)) {
+                filtered.push(r)
+            }
+        }
+
+        return filtered
     }
 
     Component.onCompleted: {
@@ -128,7 +151,6 @@ Item {
                                    || actionsMenu.opened) ? "#D1D5DB" : "transparent"
                     border.width: (kebabBtn.hovered
                                    || actionsMenu.opened) ? 1 : 0
-
                 }
 
                 contentItem: Text {
@@ -264,7 +286,6 @@ Item {
                     }
                 }
             }
-
         }
 
         // Header
@@ -274,8 +295,14 @@ Item {
             radius: 20
 
             gradient: Gradient {
-                GradientStop { position: 0.0; color: colorPrimary }
-                GradientStop { position: 1.0; color: colorSecundary }
+                GradientStop {
+                    position: 0.0
+                    color: colorPrimary
+                }
+                GradientStop {
+                    position: 1.0
+                    color: colorSecundary
+                }
             }
 
             Rectangle {
@@ -501,7 +528,7 @@ Item {
                 }
 
                 Rectangle {
-                    Layout.preferredWidth: 280
+                    Layout.preferredWidth: 320
                     Layout.preferredHeight: 42
                     radius: 10
                     color: "white"
@@ -530,8 +557,9 @@ Item {
                         TextField {
                             id: studentSearchField
                             Layout.fillWidth: true
-                            placeholderText: "Buscar estudiante..."
+                            placeholderText: "Buscar por nombre, identificación o colegio..."
                             font.pixelSize: 13
+                            placeholderTextColor: "#94A3B8"
                             color: "#1F2937"
                             selectByMouse: true
 
@@ -618,28 +646,53 @@ Item {
                                 anchors.fill: parent
                                 anchors.leftMargin: 20
                                 anchors.rightMargin: 20
-                                spacing: 16
+                                spacing: 12
 
+                                // ✅ SIEMPRE VISIBLE - Estudiante
                                 Text {
                                     Layout.fillWidth: true
-                                    Layout.minimumWidth: 150
+                                    Layout.minimumWidth: 120
                                     text: "Estudiante"
                                     font.pixelSize: 13
                                     font.bold: true
                                     color: "#1F2937"
                                 }
 
+                                // Identificación (visible > 900px)
                                 Text {
-                                    Layout.preferredWidth: detailRoot.width > 900 ? 100 : 80
-                                    text: "Puntaje Global"
+                                    Layout.preferredWidth: 100
+                                    text: "ID"
+                                    font.pixelSize: 13
+                                    font.bold: true
+                                    color: "#1F2937"
+                                    horizontalAlignment: Text.AlignHCenter
+                                    visible: detailRoot.width > 900
+                                }
+
+                                // Colegio (visible > 900px)
+                                Text {
+                                    Layout.preferredWidth: 110
+                                    text: "Colegio"
+                                    font.pixelSize: 13
+                                    font.bold: true
+                                    color: "#1F2937"
+                                    horizontalAlignment: Text.AlignHCenter
+                                    visible: detailRoot.width > 900
+                                }
+
+                                // ✅ SIEMPRE VISIBLE - Puntaje Global
+                                Text {
+                                    Layout.preferredWidth: 85
+                                    text: "Puntaje"
                                     font.pixelSize: 13
                                     font.bold: true
                                     color: "#1F2937"
                                     horizontalAlignment: Text.AlignHCenter
                                 }
 
+                                // MAT (visible > 700px)
                                 Text {
-                                    Layout.preferredWidth: detailRoot.width > 900 ? 70 : 60
+                                    Layout.preferredWidth: 65
                                     text: "MAT"
                                     font.pixelSize: 13
                                     font.bold: true
@@ -648,8 +701,9 @@ Item {
                                     visible: detailRoot.width > 700
                                 }
 
+                                // LEC (visible > 700px)
                                 Text {
-                                    Layout.preferredWidth: detailRoot.width > 900 ? 70 : 60
+                                    Layout.preferredWidth: 65
                                     text: "LEC"
                                     font.pixelSize: 13
                                     font.bold: true
@@ -658,38 +712,42 @@ Item {
                                     visible: detailRoot.width > 700
                                 }
 
+                                // SOC (visible > 900px)
                                 Text {
-                                    Layout.preferredWidth: detailRoot.width > 900 ? 70 : 60
+                                    Layout.preferredWidth: 65
                                     text: "SOC"
                                     font.pixelSize: 13
                                     font.bold: true
                                     color: "#1F2937"
                                     horizontalAlignment: Text.AlignHCenter
-                                    visible: detailRoot.width > 800
+                                    visible: detailRoot.width > 900
                                 }
 
+                                // NAT (visible > 900px)
                                 Text {
-                                    Layout.preferredWidth: detailRoot.width > 900 ? 70 : 60
+                                    Layout.preferredWidth: 65
                                     text: "NAT"
                                     font.pixelSize: 13
                                     font.bold: true
                                     color: "#1F2937"
                                     horizontalAlignment: Text.AlignHCenter
-                                    visible: detailRoot.width > 800
+                                    visible: detailRoot.width > 900
                                 }
 
+                                // ING (visible > 900px)
                                 Text {
-                                    Layout.preferredWidth: detailRoot.width > 900 ? 70 : 60
+                                    Layout.preferredWidth: 65
                                     text: "ING"
                                     font.pixelSize: 13
                                     font.bold: true
                                     color: "#1F2937"
                                     horizontalAlignment: Text.AlignHCenter
-                                    visible: detailRoot.width > 800
+                                    visible: detailRoot.width > 900
                                 }
 
+                                // ✅ SIEMPRE VISIBLE - Acciones
                                 Text {
-                                    Layout.preferredWidth: detailRoot.width > 900 ? 100 : 90
+                                    Layout.preferredWidth: 90
                                     text: "Acciones"
                                     font.pixelSize: 13
                                     font.bold: true
@@ -706,38 +764,16 @@ Item {
                             Layout.fillHeight: true
                             clip: true
 
-                            model: {
-                                if (studentSearchField.text === "") {
-                                    return detailRoot.resultsModel
-                                }
-
-                                var filtered = []
-                                var searchLower = studentSearchField.text.toLowerCase()
-
-                                for (var i = 0; i < detailRoot.resultsModel.length; i++) {
-                                    var result = detailRoot.resultsModel[i]
-                                    if (result.studentName.toLowerCase(
-                                                ).indexOf(searchLower) !== -1) {
-                                        filtered.push(result)
-                                    }
-                                }
-
-                                return filtered
-                            }
+                            model: filterResults(studentSearchField.text)
 
                             ScrollBar.vertical: ScrollBar {
                                 policy: ScrollBar.AsNeeded
                                 width: 8
-
                                 contentItem: Rectangle {
                                     implicitWidth: 8
                                     radius: 4
                                     color: parent.pressed ? "#A0AEC0" : "#CBD5E0"
-                                    Behavior on color {
-                                        ColorAnimation {
-                                            duration: 150
-                                        }
-                                    }
+                                    Behavior on color { ColorAnimation { duration: 150 } }
                                 }
                             }
 
@@ -745,54 +781,35 @@ Item {
                                 width: resultsList.width
                                 resultData: modelData
                                 rowIndex: index
-
                                 property var bookletMaxValues: ({
-                                        "mat": detailRoot.bookletMaxValues.mat,
-                                        "lec": detailRoot.bookletMaxValues.lec,
-                                        "soc": detailRoot.bookletMaxValues.soc,
-                                        "nat": detailRoot.bookletMaxValues.nat,
-                                        "ing": detailRoot.bookletMaxValues.ing
-                                    })
-
+                                    "mat": detailRoot.bookletMaxValues.mat,
+                                    "lec": detailRoot.bookletMaxValues.lec,
+                                    "soc": detailRoot.bookletMaxValues.soc,
+                                    "nat": detailRoot.bookletMaxValues.nat,
+                                    "ing": detailRoot.bookletMaxValues.ing
+                                })
                                 onEditClicked: {
-                                    resultPopup.openForEdit(
-                                                detailRoot.simulacroId,
-                                                detailRoot.bookletMaxValues,
-                                                modelData)
+                                    resultPopup.openForEdit(detailRoot.simulacroId, detailRoot.bookletMaxValues, modelData)
                                 }
-
                                 onDeleteClicked: {
                                     deleteResultConfirm.resultToDelete = modelData
                                     deleteResultConfirm.open()
                                 }
-
                                 onPdfClicked: {
                                     boletinConfirmDialog.studentId = modelData.studentId
-                                    boletinConfirmDialog.studentName = modelData.studentName  // ← NUEVO
+                                    boletinConfirmDialog.studentName = modelData.studentName
                                     boletinConfirmDialog.open()
                                 }
                             }
 
-                            // Estado vacío
+                            // Mensaje de "no encontrados" (ahora sincronizado)
+                            // === Mensajes de estado vacío ===
+
+                            // Caso 1: Hay texto de búsqueda, pero no hay coincidencias
                             Rectangle {
-                                visible: {
-                                    if (studentSearchField.text === "") {
-                                        return detailRoot.resultsModel.length === 0
-                                    }
+                                visible: studentSearchField.text !== ""
+                                         && filterResults(studentSearchField.text).length === 0
 
-                                    var filtered = 0
-                                    var searchLower = studentSearchField.text.toLowerCase()
-
-                                    for (var i = 0; i < detailRoot.resultsModel.length; i++) {
-                                        if (detailRoot.resultsModel[i].studentName.toLowerCase(
-                                                    ).indexOf(
-                                                    searchLower) !== -1) {
-                                            filtered++
-                                        }
-                                    }
-
-                                    return filtered === 0
-                                }
                                 anchors.centerIn: parent
                                 width: parent.width
                                 height: 280
@@ -813,7 +830,7 @@ Item {
 
                                         Text {
                                             anchors.centerIn: parent
-                                            text: studentSearchField.text === "" ? "R" : "⌕"
+                                            text: "⌕"  // Lupa para búsqueda sin resultados
                                             font.pixelSize: 32
                                             font.bold: true
                                             color: colorPrimary
@@ -821,7 +838,7 @@ Item {
                                     }
 
                                     Text {
-                                        text: studentSearchField.text === "" ? "No hay resultados registrados" : "No se encontraron estudiantes"
+                                        text: "No se encontraron estudiantes"
                                         font.pixelSize: 16
                                         font.bold: true
                                         color: "#1F2937"
@@ -829,7 +846,56 @@ Item {
                                     }
 
                                     Text {
-                                        text: studentSearchField.text === "" ? "Comienza ingresando las notas de tus estudiantes" : "Intenta con otro nombre"
+                                        text: "Intenta con otro nombre, identificación o colegio"
+                                        font.pixelSize: 14
+                                        color: "#6B7280"
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                    }
+                                }
+                            }
+
+                            // Caso 2: NO hay búsqueda activa y la lista está completamente vacía
+                            Rectangle {
+                                visible: studentSearchField.text === ""
+                                         && detailRoot.resultsModel.length === 0
+
+                                anchors.centerIn: parent
+                                width: parent.width
+                                height: 280
+                                color: "transparent"
+
+                                Column {
+                                    anchors.centerIn: parent
+                                    spacing: 16
+
+                                    Rectangle {
+                                        width: 80
+                                        height: 80
+                                        radius: 40
+                                        color: "#F9FAFB"
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        border.color: "#E5E7EB"
+                                        border.width: 2
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "R"  // ← Tu ícono original para "resultados"
+                                            font.pixelSize: 32
+                                            font.bold: true
+                                            color: colorPrimary
+                                        }
+                                    }
+
+                                    Text {
+                                        text: "No hay resultados registrados"
+                                        font.pixelSize: 16
+                                        font.bold: true
+                                        color: "#1F2937"
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                    }
+
+                                    Text {
+                                        text: "Comienza ingresando las notas de tus estudiantes"
                                         font.pixelSize: 14
                                         color: "#6B7280"
                                         anchors.horizontalCenter: parent.horizontalCenter
@@ -850,7 +916,6 @@ Item {
             }
         }
     }
-
 
     CustomAlert {
         id: viewAlert
@@ -881,16 +946,35 @@ Item {
 
         Overlay.modal: Rectangle {
             color: "#80000000"
-            Behavior on opacity { NumberAnimation { duration: 200 } }
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 200
+                }
+            }
         }
 
         enter: Transition {
-            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 200 }
-            NumberAnimation { property: "scale"; from: 0.92; to: 1; duration: 200; easing.type: Easing.OutCubic }
+            NumberAnimation {
+                property: "opacity"
+                from: 0
+                to: 1
+                duration: 200
+            }
+            NumberAnimation {
+                property: "scale"
+                from: 0.92
+                to: 1
+                duration: 200
+                easing.type: Easing.OutCubic
+            }
         }
 
         exit: Transition {
-            NumberAnimation { property: "opacity"; to: 0; duration: 150 }
+            NumberAnimation {
+                property: "opacity"
+                to: 0
+                duration: 150
+            }
         }
 
         background: Rectangle {
@@ -975,7 +1059,9 @@ Item {
                             verticalAlignment: Text.AlignVCenter
                         }
 
-                        HoverHandler { cursorShape: Qt.PointingHandCursor }
+                        HoverHandler {
+                            cursorShape: Qt.PointingHandCursor
+                        }
                     }
                 }
             }
@@ -1016,7 +1102,8 @@ Item {
 
                                 Text {
                                     anchors.centerIn: parent
-                                    text: detailRoot.simulacroTitle.charAt(0).toUpperCase() || "S"
+                                    text: detailRoot.simulacroTitle.charAt(
+                                              0).toUpperCase() || "S"
                                     font.pixelSize: 20
                                     font.bold: true
                                     color: "white"
@@ -1039,7 +1126,8 @@ Item {
                                 }
 
                                 Text {
-                                    text: resultsModel.length + " resultado" + (resultsModel.length !== 1 ? "s" : "")
+                                    text: resultsModel.length + " resultado"
+                                          + (resultsModel.length !== 1 ? "s" : "")
                                     font.pixelSize: 13
                                     color: "#6B7280"
                                 }
@@ -1101,7 +1189,9 @@ Item {
                         }
                     }
 
-                    Item { Layout.fillHeight: true }
+                    Item {
+                        Layout.fillHeight: true
+                    }
                 }
             }
 
@@ -1136,7 +1226,11 @@ Item {
                             color: parent.hovered ? "#F1F5F9" : "white"
                             border.color: "#E2E8F0"
                             border.width: 1
-                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 150
+                                }
+                            }
                         }
 
                         contentItem: Text {
@@ -1148,7 +1242,9 @@ Item {
                             verticalAlignment: Text.AlignVCenter
                         }
 
-                        HoverHandler { cursorShape: Qt.PointingHandCursor }
+                        HoverHandler {
+                            cursorShape: Qt.PointingHandCursor
+                        }
                     }
 
                     Button {
@@ -1159,7 +1255,11 @@ Item {
                         background: Rectangle {
                             radius: 10
                             color: parent.hovered ? "#DC2626" : "#EF4444"
-                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 150
+                                }
+                            }
                         }
 
                         contentItem: Text {
@@ -1171,20 +1271,25 @@ Item {
                             verticalAlignment: Text.AlignVCenter
                         }
 
-                        HoverHandler { cursorShape: Qt.PointingHandCursor }
+                        HoverHandler {
+                            cursorShape: Qt.PointingHandCursor
+                        }
 
                         onClicked: {
                             deleteConfirm.close()
-                            var response = backend.deleteFullSimulacrum(simulacroId)
+                            var response = backend.deleteFullSimulacrum(
+                                        simulacroId)
                             if (response.success) {
-                                viewAlert.showAlert("Eliminado", response.message, "success")
+                                viewAlert.showAlert("Eliminado",
+                                                    response.message, "success")
                                 mainStack.pop()
                                 if (mainStack.depth > 0) {
                                     mainStack.get(0).refreshData()
                                     console.log("Lista de simulacros refrescada después de eliminar")
                                 }
                             } else {
-                                viewAlert.showAlert("Error", response.message, "error")
+                                viewAlert.showAlert("Error",
+                                                    response.message, "error")
                             }
                         }
                     }
@@ -1203,7 +1308,7 @@ Item {
         x: Math.round((parent.width - width) / 2)
         y: Math.round((parent.height - height) / 2)
         width: Math.min(parent.width * 0.92, 440)
-        height: Math.min(parent.height * 0.65, 360)
+        height: Math.min(parent.height * 0.65, 380)
 
         modal: true
         focus: true
@@ -1212,16 +1317,35 @@ Item {
 
         Overlay.modal: Rectangle {
             color: "#80000000"
-            Behavior on opacity { NumberAnimation { duration: 200 } }
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 200
+                }
+            }
         }
 
         enter: Transition {
-            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 200 }
-            NumberAnimation { property: "scale"; from: 0.92; to: 1; duration: 200; easing.type: Easing.OutCubic }
+            NumberAnimation {
+                property: "opacity"
+                from: 0
+                to: 1
+                duration: 200
+            }
+            NumberAnimation {
+                property: "scale"
+                from: 0.92
+                to: 1
+                duration: 200
+                easing.type: Easing.OutCubic
+            }
         }
 
         exit: Transition {
-            NumberAnimation { property: "opacity"; to: 0; duration: 150 }
+            NumberAnimation {
+                property: "opacity"
+                to: 0
+                duration: 150
+            }
         }
 
         background: Rectangle {
@@ -1306,7 +1430,9 @@ Item {
                             verticalAlignment: Text.AlignVCenter
                         }
 
-                        HoverHandler { cursorShape: Qt.PointingHandCursor }
+                        HoverHandler {
+                            cursorShape: Qt.PointingHandCursor
+                        }
                     }
                 }
             }
@@ -1347,9 +1473,8 @@ Item {
 
                                 Text {
                                     anchors.centerIn: parent
-                                    text: (deleteResultConfirm.resultToDelete && deleteResultConfirm.resultToDelete.studentName)
-                                          ? deleteResultConfirm.resultToDelete.studentName.charAt(0).toUpperCase()
-                                          : "E"
+                                    text: (deleteResultConfirm.resultToDelete
+                                           && deleteResultConfirm.resultToDelete.studentName) ? deleteResultConfirm.resultToDelete.studentName.charAt(0).toUpperCase() : "E"
                                     font.pixelSize: 20
                                     font.bold: true
                                     color: "white"
@@ -1363,9 +1488,8 @@ Item {
 
                                 Text {
                                     width: parent.width
-                                    text: (deleteResultConfirm.resultToDelete && deleteResultConfirm.resultToDelete.studentName)
-                                          ? deleteResultConfirm.resultToDelete.studentName
-                                          : "Estudiante"
+                                    text: (deleteResultConfirm.resultToDelete
+                                           && deleteResultConfirm.resultToDelete.studentName) ? deleteResultConfirm.resultToDelete.studentName : "Estudiante"
                                     font.pixelSize: 16
                                     font.bold: true
                                     color: "#1F2937"
@@ -1374,9 +1498,8 @@ Item {
                                 }
 
                                 Text {
-                                    text: (deleteResultConfirm.resultToDelete && deleteResultConfirm.resultToDelete.global)
-                                          ? "Puntaje: " + deleteResultConfirm.resultToDelete.global
-                                          : "Sin puntaje"
+                                    text: (deleteResultConfirm.resultToDelete
+                                           && deleteResultConfirm.resultToDelete.global) ? "Puntaje: " + deleteResultConfirm.resultToDelete.global : "Sin puntaje"
                                     font.pixelSize: 13
                                     color: "#6B7280"
                                 }
@@ -1438,7 +1561,9 @@ Item {
                         }
                     }
 
-                    Item { Layout.fillHeight: true }
+                    Item {
+                        Layout.fillHeight: true
+                    }
                 }
             }
 
@@ -1473,7 +1598,11 @@ Item {
                             color: parent.hovered ? "#F1F5F9" : "white"
                             border.color: "#E2E8F0"
                             border.width: 1
-                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 150
+                                }
+                            }
                         }
 
                         contentItem: Text {
@@ -1485,7 +1614,9 @@ Item {
                             verticalAlignment: Text.AlignVCenter
                         }
 
-                        HoverHandler { cursorShape: Qt.PointingHandCursor }
+                        HoverHandler {
+                            cursorShape: Qt.PointingHandCursor
+                        }
                     }
 
                     Button {
@@ -1496,7 +1627,11 @@ Item {
                         background: Rectangle {
                             radius: 10
                             color: parent.hovered ? "#DC2626" : "#EF4444"
-                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 150
+                                }
+                            }
                         }
 
                         contentItem: Text {
@@ -1508,24 +1643,43 @@ Item {
                             verticalAlignment: Text.AlignVCenter
                         }
 
-                        HoverHandler { cursorShape: Qt.PointingHandCursor }
+                        HoverHandler {
+                            cursorShape: Qt.PointingHandCursor
+                        }
 
                         onClicked: {
                             if (deleteResultConfirm.resultToDelete) {
-                                var studentName = deleteResultConfirm.resultToDelete.studentName
-                                var success = backend.deleteResult(simulacroId, studentName)
+                                let ident = deleteResultConfirm.resultToDelete.identification
+                                    || ""
+                                let name = deleteResultConfirm.resultToDelete.studentName
+                                    || "Estudiante"
+
+                                if (ident === "") {
+                                    viewAlert.showAlert(
+                                                "Error",
+                                                "No se encontró la identificación del estudiante",
+                                                "error")
+                                    deleteResultConfirm.close()
+                                    return
+                                }
+
+                                var success = backend.deleteResult(simulacroId,
+                                                                   ident)
 
                                 deleteResultConfirm.close()
 
                                 if (success) {
-                                    viewAlert.showAlert("Eliminado",
-                                        "Resultado eliminado correctamente",
-                                        "success")
-                                    refreshResults()
+                                    viewAlert.showAlert(
+                                                "Eliminado",
+                                                "Resultado de " + name
+                                                + " eliminado correctamente",
+                                                "success")
+                                    refreshResults() // ← recarga la lista
                                 } else {
-                                    viewAlert.showAlert("Error",
-                                        "No se pudo eliminar el resultado",
-                                        "error")
+                                    viewAlert.showAlert(
+                                                "Error",
+                                                "No se pudo eliminar el resultado. Intenta de nuevo.",
+                                                "error")
                                 }
                             }
                         }
@@ -1534,7 +1688,6 @@ Item {
             }
         }
     }
-
 
     // Wizard para editar (independiente del de la lista)
     SimulacrumWizard {
@@ -1557,18 +1710,18 @@ Item {
 
         onPdfRequested: {
             let success = backend.generateAndOpenBoletinPdf(
-                simulacroId,
-                boletinConfirmDialog.studentId
-            )
+                    simulacroId, boletinConfirmDialog.studentId)
 
             if (success) {
-                viewAlert.showAlert("Éxito",
-                    "Boletín generado y guardado correctamente",
-                    "success")
+                viewAlert.showAlert(
+                            "Éxito",
+                            "Boletín generado y guardado correctamente",
+                            "success")
             } else {
-                viewAlert.showAlert("Error",
-                    "No se pudo generar el boletín. Verifica los datos.",
-                    "error")
+                viewAlert.showAlert(
+                            "Error",
+                            "No se pudo generar el boletín. Verifica los datos.",
+                            "error")
             }
         }
     }
@@ -1580,19 +1733,20 @@ Item {
         simulacroId: detailRoot.simulacroId
 
         onExportRequested: () => {
-            let success = backend.exportAllBoletines(simulacroId)
+                               let success = backend.exportAllBoletines(
+                                   simulacroId)
 
-            if (success) {
-                viewAlert.showAlert("¡Éxito!",
-                    "Los boletines fueron generados y guardados correctamente.",
-                    "success")
-            } else {
-                viewAlert.showAlert("Atención",
-                    "No se pudieron generar todos los boletines o hubo un problema al guardar. Revisa la carpeta de descargas.",
-                    "warning")
-            }
-        }
+                               if (success) {
+                                   viewAlert.showAlert(
+                                       "¡Éxito!",
+                                       "Los boletines fueron generados y guardados correctamente.",
+                                       "success")
+                               } else {
+                                   viewAlert.showAlert(
+                                       "Atención",
+                                       "No se pudieron generar todos los boletines o hubo un problema al guardar. Revisa la carpeta de descargas.",
+                                       "warning")
+                               }
+                           }
     }
-
-
 }

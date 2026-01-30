@@ -54,12 +54,12 @@ Rectangle {
         anchors.fill: parent
         anchors.leftMargin: 20
         anchors.rightMargin: 20
-        spacing: 16
+        spacing: 12
 
-        // Estudiante
+        // ✅ SIEMPRE VISIBLE - Estudiante
         Text {
             Layout.fillWidth: true
-            Layout.minimumWidth: 150
+            Layout.minimumWidth: 120
             text: resultData.studentName || "Sin nombre"
             font.pixelSize: 14
             color: "#1F2937"
@@ -67,9 +67,33 @@ Rectangle {
             verticalAlignment: Text.AlignVCenter
         }
 
-        // Global - Destacado
+        // Identificación (visible > 900px)
+        Text {
+            Layout.preferredWidth: 100
+            text: resultData.identification || "N/A"
+            font.pixelSize: 13
+            color: "#6B7280"
+            elide: Text.ElideRight
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            visible: rowRoot.width > 900
+        }
+
+        // Colegio (visible > 900px)
+        Text {
+            Layout.preferredWidth: 110
+            text: resultData.school || "N/A"
+            font.pixelSize: 13
+            color: "#6B7280"
+            elide: Text.ElideRight
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            visible: rowRoot.width > 900
+        }
+
+        // ✅ SIEMPRE VISIBLE - Global
         Rectangle {
-            Layout.preferredWidth: rowRoot.width > 900 ? 100 : 80
+            Layout.preferredWidth: 85
             Layout.preferredHeight: 34
             radius: 8
             color: getColorByScoreBg(resultData.global)
@@ -83,9 +107,9 @@ Rectangle {
             }
         }
 
-        // MAT
+        // MAT (visible > 700px)
         Rectangle {
-            Layout.preferredWidth: rowRoot.width > 900 ? 70 : 60
+            Layout.preferredWidth: 65
             Layout.preferredHeight: 30
             radius: 6
             color: "#F3F4F6"
@@ -100,9 +124,9 @@ Rectangle {
             }
         }
 
-        // LEC
+        // LEC (visible > 700px)
         Rectangle {
-            Layout.preferredWidth: rowRoot.width > 900 ? 70 : 60
+            Layout.preferredWidth: 65
             Layout.preferredHeight: 30
             radius: 6
             color: "#F3F4F6"
@@ -117,13 +141,13 @@ Rectangle {
             }
         }
 
-        // SOC
+        // SOC (visible > 900px)
         Rectangle {
-            Layout.preferredWidth: rowRoot.width > 900 ? 70 : 60
+            Layout.preferredWidth: 65
             Layout.preferredHeight: 30
             radius: 6
             color: "#F3F4F6"
-            visible: rowRoot.width > 800
+            visible: rowRoot.width > 900
 
             Text {
                 anchors.centerIn: parent
@@ -134,13 +158,13 @@ Rectangle {
             }
         }
 
-        // NAT
+        // NAT (visible > 900px)
         Rectangle {
-            Layout.preferredWidth: rowRoot.width > 900 ? 70 : 60
+            Layout.preferredWidth: 65
             Layout.preferredHeight: 30
             radius: 6
             color: "#F3F4F6"
-            visible: rowRoot.width > 800
+            visible: rowRoot.width > 900
 
             Text {
                 anchors.centerIn: parent
@@ -151,13 +175,13 @@ Rectangle {
             }
         }
 
-        // ING
+        // ING (visible > 900px)
         Rectangle {
-            Layout.preferredWidth: rowRoot.width > 900 ? 70 : 60
+            Layout.preferredWidth: 65
             Layout.preferredHeight: 30
             radius: 6
             color: "#F3F4F6"
-            visible: rowRoot.width > 800
+            visible: rowRoot.width > 900
 
             Text {
                 anchors.centerIn: parent
@@ -167,9 +191,10 @@ Rectangle {
                 color: "#4B5563"
             }
         }
-        // Acciones - Menú de tres puntos
+
+        // ✅ SIEMPRE VISIBLE - Acciones
         Item {
-            Layout.preferredWidth: rowRoot.width > 900 ? 100 : 90
+            Layout.preferredWidth: 90
             Layout.preferredHeight: 32
 
             Button {
@@ -187,7 +212,6 @@ Rectangle {
 
                 background: Rectangle {
                     radius: 6
-                    // Se ilumina si hay hover O si el menú está abierto
                     color: (menuBtn.hovered || actionsMenu.opened) ? "#E9EBF0" : "transparent"
                     border.color: (menuBtn.hovered || actionsMenu.opened) ? "#D1D5DB" : "transparent"
                     border.width: (menuBtn.hovered || actionsMenu.opened) ? 1 : 0
@@ -202,10 +226,7 @@ Rectangle {
                     verticalAlignment: Text.AlignVCenter
                 }
 
-                // 2. EL CLIC:
-                // Usamos la señal nativa del botón para que no haya conflictos
                 onClicked: {
-                    // Lógica responsiva
                     var realMenuHeight = actionsMenu.implicitHeight
                     var posInList = menuBtn.mapToItem(detailRoot.contentItem, 0, 0).y
                     var spaceBelow = detailRoot.height - (posInList + menuBtn.height)
@@ -219,7 +240,6 @@ Rectangle {
                     actionsMenu.open()
                 }
 
-                // El menú se mantiene dentro del botón
                 Menu {
                     id: actionsMenu
                     x: -(width - menuBtn.width)
@@ -233,7 +253,6 @@ Rectangle {
                         border.width: 1
                     }
 
-                    // --- OPCIÓN EDITAR ---
                     MenuItem {
                         id: editItem
                         height: 42
@@ -254,7 +273,6 @@ Rectangle {
                                 color: "#1F2937"
                                 verticalAlignment: Text.AlignVCenter
                             }
-                            // Cursor de mano para la opción
                             HoverHandler { cursorShape: Qt.PointingHandCursor }
                         }
 
@@ -268,7 +286,6 @@ Rectangle {
                         contentItem: Rectangle { implicitHeight: 1; color: "#F3F4F6" }
                     }
 
-                    // --- OPCIÓN ELIMINAR ---
                     MenuItem {
                         id: deleteItem
                         height: 42
@@ -302,7 +319,6 @@ Rectangle {
                         contentItem: Rectangle { implicitHeight: 1; color: "#F3F4F6" }
                     }
 
-                    // --- OPCIÓN PDF ---
                     MenuItem {
                         id: pdfItem
                         height: 42
@@ -335,6 +351,4 @@ Rectangle {
             }
         }
     }
-
-
 }
